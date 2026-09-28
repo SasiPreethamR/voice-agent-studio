@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI4Bharat — Indic Speech Playground</title>
+<style>
+  :root{--bg:#0b1020;--card:#141a33;--ink:#eef2ff;--mute:#9aa3c7;--accent:#7c9cff;--ok:#43d39e;--err:#ff6b6b;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(180deg,#0a0f24,#0b1020 60%);color:var(--ink);min-height:100vh}
+  header{padding:24px 32px;border-bottom:1px solid #222a4a;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  header h1{margin:0;font-size:20px;letter-spacing:.3px}
+  header .sub{color:var(--mute);font-size:13px}
+  .badge{padding:4px 10px;border-radius:999px;background:#1c2447;color:var(--mute);font-size:12px;margin-left:8px}
+  main{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:24px 32px;max-width:1400px;margin:0 auto}
+  @media (max-width: 900px){ main{grid-template-columns:1fr} }
+  .card{background:var(--card);border:1px solid #1f2750;border-radius:14px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .card h2{margin:0 0 4px;font-size:16px}
+  .card p.hint{margin:0 0 16px;color:var(--mute);font-size:13px}
+  label{display:block;font-size:12px;color:var(--mute);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.06em}
+  textarea,input[type=text],select,input[type=file]{width:100%;background:#0d1330;color:var(--ink);border:1px solid #283264;border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit}
+  textarea{min-height:90px;resize:vertical}
+  .row{display:flex;gap:10px}
+  .row > *{flex:1}
+  button{margin-top:14px;background:var(--accent);color:#0a0f24;border:0;border-radius:10px;padding:12px 16px;font-weight:600;cursor:pointer;font-size:14px}
+  button:hover{filter:brightness(1.1)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .out{margin-top:14px;background:#0d1330;border:1px solid #283264;border-radius:10px;padding:12px;min-height:48px;font-size:14px;white-space:pre-wrap;word-wrap:break-word}
+  .out.empty{color:var(--mute);font-style:italic}
+  audio{width:100%;margin-top:12px}
+  .status{font-size:12px;color:var(--mute);margin-top:8px}
+  .status.ok{color:var(--ok)} .status.err{color:var(--err)}
+  .recbar{display:flex;gap:8px;align-items:center}
+  .dot{width:10px;height:10px;border-radius:50%;background:#555}
+  .dot.live{background:#ff6b6b;box-shadow:0 0 0 0 rgba(255,107,107,.6);animation:pulse 1.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,107,107,.6)}70%{box-shadow:0 0 0 10px rgba(255,107,107,0)}100%{box-shadow:0 0 0 0 rgba(255,107,107,0)}}
+  code{background:#0d1330;padding:1px 6px;border-radius:6px;font-size:12px;border:1px solid #283264}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>AI4Bharat Indic Speech Playground <span class="badge" id="health">checking…</span></h1>
+    <div class="sub">ASR: <code>ai4bharat/indic-conformer-600m-multilingual</code> · TTS: <code>ai4bharat/indic-parler-tts</code></div>
+  </div>
+</header>
+
+<main>
+  <!-- ASR -->
+  <section class="card">
+    <h2>Speech → Text (ASR)</h2>
+    <p class="hint">Upload an audio file or record from the mic. Mono is auto-applied; audio is resampled to 16 kHz.</p>
+
+    <label>Language</label>
+    <select id="lang"></select>
+
+    <label>Decoder</label>
+    <select id="decoder">
+      <option value="ctc" selected>CTC (faster)</option>
+      <option value="rnnt">RNN-T (often more accurate)</option>
+    </select>
+
+    <label>Audio file</label>
+    <input type="file" id="audioFile" accept="audio/*" />
+
+    <label>Or record (mic)</label>
+    <div class="recbar">
+      <button id="recBtn" type="button" style="margin:0">● Start recording</button>
+      <span class="dot" id="recDot"></span>
+      <span class="status" id="recStatus">idle</span>
+    </div>
+    <audio id="recPreview" controls hidden></audio>
+
+    <button id="asrBtn">Transcribe</button>
+    <div class="status" id="asrStatus"></div>
+    <div class="out empty" id="asrOut">Transcription will appear here…</div>
+  </section>
+
+  <!-- TTS -->
+  <section class="card">
+    <h2>Text → Speech (TTS)</h2>
+    <p class="hint">Type in any of the 21 supported Indic languages or English. The <em>description</em> controls voice/style.</p>
+
+    <label>Prompt (text to speak)</label>
+    <textarea id="prompt" placeholder="नमस्ते, आप कैसे हैं?">नमस्ते, आप कैसे हैं?</textarea>
+
+    <label>Voice description</label>
+    <textarea id="description">Rohit speaks in a clear, expressive tone at a moderate pace. The recording is of very high quality, with the speaker's voice sounding close up.</textarea>
+
+    <button id="ttsBtn">Synthesize</button>
+    <div class="status" id="ttsStatus"></div>
+    <audio id="ttsAudio" controls hidden></audio>
+  </section>
+</main>
+
+<script>
+async function init() {
+  // health
+  try {
+    const h = await fetch('/health').then(r => r.json());
+    document.getElementById('health').textContent =
+      (h.asr_loaded && h.tts_loaded) ? 'models ready' : 'loading…';
+  } catch { document.getElementById('health').textContent = 'offline'; }
+
+  // langs
+  const langs = await fetch('/api/langs').then(r => r.json());
+  const sel = document.getElementById('lang');
+  for (const [code, name] of Object.entries(langs)) {
+    const o = document.createElement('option');
+    o.value = code; o.textContent = `${name} (${code})`;
+    if (code === 'hi') o.selected = true;
+    sel.appendChild(o);
+  }
+}
+init();
+
+// ---- Mic recording ----
+let mediaRecorder, chunks = [], recordedBlob = null;
+const recBtn = document.getElementById('recBtn');
+const recDot = document.getElementById('recDot');
+const recStatus = document.getElementById('recStatus');
+const recPreview = document.getElementById('recPreview');
+
+recBtn.onclick = async () => {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    chunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      recordedBlob = new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      recPreview.src = URL.createObjectURL(recordedBlob);
+      recPreview.hidden = false;
+      recBtn.textContent = '● Start recording';
+      recDot.classList.remove('live');
+      recStatus.textContent = `recorded ${(recordedBlob.size/1024).toFixed(1)} KB`;
+      stream.getTracks().forEach(t => t.stop());
+    };
+    mediaRecorder.start();
+    recBtn.textContent = '■ Stop';
+    recDot.classList.add('live');
+    recStatus.textContent = 'recording…';
+  } catch (e) {
+    recStatus.textContent = 'mic blocked: ' + e.message;
+  }
+};
+
+// ---- ASR ----
+document.getElementById('asrBtn').onclick = async () => {
+  const btn = document.getElementById('asrBtn');
+  const out = document.getElementById('asrOut');
+  const status = document.getElementById('asrStatus');
+  const fileInput = document.getElementById('audioFile');
+  const file = fileInput.files[0];
+  let blob = file || recordedBlob;
+  if (!blob) { status.className='status err'; status.textContent='Upload a file or record audio first.'; return; }
+
+  const fd = new FormData();
+  const filename = file ? file.name : 'recording.webm';
+  fd.append('audio', blob, filename);
+  fd.append('lang', document.getElementById('lang').value);
+  fd.append('decoder', document.getElementById('decoder').value);
+
+  btn.disabled = true; status.className='status'; status.textContent='Transcribing…';
+  out.className='out empty'; out.textContent='…';
+  const t0 = performance.now();
+  try {
+    const r = await fetch('/api/asr', { method:'POST', body: fd });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || r.statusText);
+    out.className='out'; out.textContent = data.text || '(empty)';
+    status.className='status ok'; status.textContent = `done in ${((performance.now()-t0)/1000).toFixed(2)}s`;
+  } catch (e) {
+    out.className='out empty'; out.textContent='(failed)';
+    status.className='status err'; status.textContent = 'Error: ' + e.message;
+  } finally { btn.disabled = false; }
+};
+
+// ---- TTS ----
+document.getElementById('ttsBtn').onclick = async () => {
+  const btn = document.getElementById('ttsBtn');
+  const status = document.getElementById('ttsStatus');
+  const audio = document.getElementById('ttsAudio');
+  const fd = new FormData();
+  fd.append('prompt', document.getElementById('prompt').value);
+  fd.append('description', document.getElementById('description').value);
+
+  btn.disabled = true; status.className='status'; status.textContent='Synthesizing… (first run may take a while)';
+  const t0 = performance.now();
+  try {
+    const r = await fetch('/api/tts', { method:'POST', body: fd });
+    if (!r.ok) {
+      const err = await r.json().catch(()=>({detail:r.statusText}));
+      throw new Error(err.detail || r.statusText);
+    }
+    const blob = await r.blob();
+    audio.src = URL.createObjectURL(blob);
+    audio.hidden = false; audio.play().catch(()=>{});
+    status.className='status ok'; status.textContent = `done in ${((performance.now()-t0)/1000).toFixed(2)}s`;
+  } catch (e) {
+    status.className='status err'; status.textContent = 'Error: ' + e.message;
+  } finally { btn.disabled = false; }
+};
+</script>
+</body>
+</html>

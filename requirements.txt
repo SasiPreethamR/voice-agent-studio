@@ -1,0 +1,15 @@
+# Orchestrator + UI. This is all you need for Gemini mode (no GPU).
+fastapi
+uvicorn[standard]
+httpx
+numpy
+python-multipart
+soundfile
+
+# Document ingestion (optional; formats without their parser are skipped)
+sentence-transformers   # embeddings; falls back to a hashing embedder if missing
+pypdf                   # PDF
+python-docx             # DOCX
+lxml                    # HTML
+pillow                  # images for OCR
+pytesseract             # OCR (also needs the tesseract binary)

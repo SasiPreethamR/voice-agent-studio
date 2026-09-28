@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Human Console</title>
+<style>
+:root{color-scheme:dark;--bg:#101113;--panel:#17191d;--panel2:#1d2026;--line:#2b3038;--text:#f4f0e8;--muted:#a9b0ba;--dim:#747d89;--accent:#55d6a5;--accent2:#f5b85b;--danger:#ff6b6b;--focus:#7aa7ff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font:14px/1.4 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:0}
+button,input,textarea{font:inherit}button{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:9px 13px;cursor:pointer}button:hover{border-color:#49515d}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--accent);border-color:var(--accent);color:#07110d;font-weight:700}.danger{background:#2a1719;border-color:#5a252a;color:#ffd9dc}.ghost{background:transparent}.top{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:#121316}.brand{display:flex;align-items:baseline;gap:12px}.brand h1{font-size:18px;margin:0;font-weight:750}.brand span{color:var(--muted);font-size:12px}.operator{display:flex;align-items:center;gap:9px}.operator label{color:var(--muted);font-size:12px}.operator input{width:190px;background:#0d0e10;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px}.shell{display:grid;grid-template-columns:minmax(280px,370px) minmax(0,1fr);height:calc(100vh - 64px)}.queue{border-right:1px solid var(--line);background:#131518;display:flex;flex-direction:column;min-height:0}.queue-head{padding:16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.queue-head b{font-size:13px}.count{color:var(--muted);font-size:12px}.list{padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px}.handoff{width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:11px 12px;display:grid;gap:7px}.handoff.active{border-color:var(--focus);box-shadow:0 0 0 1px rgba(122,167,255,.35) inset}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.summary{color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12px}.meta{color:var(--dim);font-size:11px}.pill{border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}.pending{border-color:#5f4d23;color:#ffd27c}.accepted{border-color:#28624e;color:#8ff0c6}.resolved{border-color:#394457;color:#b9c9ee}.cancelled{border-color:#62333a;color:#ffb8bf}.workspace{min-width:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:linear-gradient(180deg,#15171b,#101113)}.detail-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.detail-title{display:grid;gap:4px}.detail-title h2{font-size:18px;margin:0}.detail-title span{color:var(--muted);font-size:12px}.call-state{font-size:12px;color:var(--muted)}.content{padding:18px 22px;overflow:auto;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(280px,.95fr);gap:18px;align-items:start}.section{display:grid;gap:10px}.section h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0}.box{border:1px solid var(--line);background:rgba(23,25,29,.82);border-radius:8px;padding:14px}.issue{font-size:16px;line-height:1.45}.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.fact{border:1px solid var(--line);border-radius:8px;padding:10px;background:#121417}.fact span{display:block;color:var(--dim);font-size:11px;margin-bottom:3px}.transcript{display:grid;gap:8px}.turn{border:1px solid var(--line);border-radius:8px;padding:10px;background:#121417}.turn-role{font-size:11px;text-transform:uppercase;color:var(--dim);margin-bottom:4px}.empty{height:100%;min-height:260px;display:grid;place-items:center;color:var(--dim);text-align:center}.controls{padding:14px 22px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;background:#121316}.controls textarea{flex:1;min-height:42px;max-height:100px;resize:vertical;background:#0d0e10;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px}.level{height:6px;width:120px;border-radius:999px;background:#262b32;overflow:hidden}.level i{display:block;width:0;height:100%;background:var(--accent);transition:width .08s linear}.toast{position:fixed;right:18px;bottom:18px;background:#20242a;border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.35);opacity:0;transform:translateY(8px);transition:.18s}.toast.show{opacity:1;transform:none}@media(max-width:850px){.shell{grid-template-columns:1fr;height:auto}.queue{border-right:0;border-bottom:1px solid var(--line);max-height:40vh}.content{grid-template-columns:1fr}.top{height:auto;align-items:flex-start;gap:12px;padding:14px;flex-direction:column}.operator input{width:min(70vw,260px)}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><h1>Human Console</h1><span id="hostLabel"></span></div>
+  <div class="operator"><label for="operatorName">Operator</label><input id="operatorName" autocomplete="name" placeholder="Human Agent"></div>
+</header>
+<main class="shell">
+  <aside class="queue">
+    <div class="queue-head"><b>Live Queue</b><span class="count" id="queueCount">0 open</span></div>
+    <div class="list" id="handoffList"></div>
+  </aside>
+  <section class="workspace">
+    <div class="detail-head">
+      <div class="detail-title"><h2 id="detailName">No handoff selected</h2><span id="detailSub">Select a request from the queue.</span></div>
+      <div class="call-state" id="callState">Idle</div>
+    </div>
+    <div class="content" id="detailContent"><div class="empty">Waiting for an escalation.</div></div>
+    <div class="controls">
+      <div class="level" title="Mic level"><i id="micLevel"></i></div>
+      <button class="primary" id="btnAccept" disabled>Pick up call</button>
+      <button class="ghost" id="btnReconnect" disabled>Reconnect audio</button>
+      <textarea id="resolveNote" placeholder="Resolution note"></textarea>
+      <button class="danger" id="btnResolve" disabled>Resolve</button>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+const API='';
+const OUT_SR=24000;
+let handoffs=[],selected=null,bridge=null,pollTimer=null;
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function statusClass(s){return s==='accepted'?'accepted':s==='resolved'?'resolved':s==='cancelled'?'cancelled':'pending'}
+function timeAgo(ts){if(!ts)return'';const ms=Date.now()-new Date(ts).getTime();const m=Math.max(0,Math.round(ms/60000));return m<1?'now':m+'m ago'}
+async function api(path,opts={}){const res=await fetch(API+path,{...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}});if(!res.ok)throw new Error(await res.text());return res.json()}
+function arrayBufferToB64(buf){const bytes=new Uint8Array(buf);let out='';for(let i=0;i<bytes.length;i+=8192)out+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));return btoa(out)}
+function b64ToArrayBuffer(b64){const bin=atob(b64);const buf=new ArrayBuffer(bin.length);const u8=new Uint8Array(buf);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return buf}
+function ds(buf,from,to){if(from===to)return buf;const r=from/to,len=Math.max(1,Math.floor(buf.length/r)),out=new Float32Array(len);for(let i=0;i<len;i++)out[i]=buf[Math.min(buf.length-1,Math.round(i*r))];return out}
+function f2i(f){const out=new Int16Array(f.length);for(let i=0;i<f.length;i++){let s=Math.max(-1,Math.min(1,f[i]));out[i]=s<0?s*0x8000:s*0x7FFF}return out}
+async function loadHandoffs(){
+  try{const data=await api('/api/handoffs?status=open');handoffs=data.handoffs||[];renderList();if(selected){const fresh=handoffs.find(h=>h.id===selected.id);if(fresh){selected=fresh;renderDetail()}}}
+  catch(e){$('callState').textContent='Offline'}
+}
+function renderList(){
+  $('queueCount').textContent=handoffs.length+' open';
+  $('handoffList').innerHTML=handoffs.map(h=>'<button class="handoff '+(selected&&selected.id===h.id?'active':'')+'" data-id="'+h.id+'">'
+    +'<div class="row"><span class="name">'+esc(h.customer_name||'Customer')+'</span><span class="pill '+statusClass(h.status)+'">'+esc(h.status||'pending')+'</span></div>'
+    +'<div class="summary">'+esc(h.issue_summary||'No summary provided')+'</div>'
+    +'<div class="row meta"><span>'+esc(h.agent_name||'Voice agent')+'</span><span>'+timeAgo(h.created_at)+'</span></div></button>').join('')||'<div class="empty">No open handoffs.</div>';
+  document.querySelectorAll('.handoff').forEach(btn=>btn.onclick=()=>selectHandoff(btn.dataset.id));
+}
+async function selectHandoff(id){
+  try{const data=await api('/api/handoffs/'+id);selected=data.handoff;renderList();renderDetail()}
+  catch(e){toast('Could not load handoff')}
+}
+function renderDetail(){
+  if(!selected)return;
+  $('detailName').textContent=selected.customer_name||'Customer';
+  $('detailSub').textContent=(selected.agent_name||'Voice agent')+' / '+(selected.id||'');
+  $('callState').textContent=bridge&&bridge.id===selected.id?bridge.state:(selected.status||'pending');
+  $('btnAccept').disabled=selected.status!=='pending';
+  $('btnReconnect').disabled=selected.status!=='accepted';
+  $('btnResolve').disabled=selected.status!=='accepted'&&selected.status!=='pending';
+  const transcript=(selected.transcript||[]).map(t=>'<div class="turn"><div class="turn-role">'+esc(t.role)+'</div><div>'+esc(t.content)+'</div></div>').join('')||'<div class="meta">No transcript yet.</div>';
+  $('detailContent').innerHTML='<div class="section"><h3>LLM Understanding</h3><div class="box issue">'+esc(selected.issue_summary||'No summary provided')+'</div><div class="facts">'
+    +'<div class="fact"><span>Status</span>'+esc(selected.status||'pending')+'</div><div class="fact"><span>Channel</span>'+esc(selected.preferred_channel||'voice')+'</div>'
+    +'<div class="fact"><span>Accepted By</span>'+esc(selected.accepted_by||'-')+'</div><div class="fact"><span>Created</span>'+esc(selected.created_at||'-')+'</div></div></div>'
+    +'<div class="section"><h3>Recent Conversation</h3><div class="transcript">'+transcript+'</div></div>';
+}
+class AudioBridge{
+  constructor(handoff){this.id=handoff.id;this.ws=null;this.ctx=null;this.playCtx=null;this.stream=null;this.processor=null;this.queue=[];this.playing=false;this.state='Connecting'}
+  async open(){
+    const name=encodeURIComponent($('operatorName').value.trim()||'Human Agent');
+    const proto=location.protocol==='https:'?'wss':'ws';
+    this.ws=new WebSocket(proto+'://'+location.host+'/ws/handoffs/'+encodeURIComponent(this.id)+'?operator_name='+name);
+    this.ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='caller_audio')this.play(m.audio,m.sample_rate||16000);if(m.type==='handoff_status'){selected=m.handoff;renderDetail()}};
+    this.ws.onclose=()=>{this.state='Disconnected';if(selected&&selected.id===this.id)renderDetail()};
+    await new Promise((resolve,reject)=>{this.ws.onopen=resolve;this.ws.onerror=()=>reject(new Error('audio socket failed'))});
+    this.state='Audio connected';
+  }
+  async startMic(){
+    if(!navigator.mediaDevices?.getUserMedia)throw new Error('Mic requires HTTPS');
+    this.ctx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:48000});
+    this.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:{ideal:true},noiseSuppression:{ideal:true},autoGainControl:{ideal:true},channelCount:{ideal:1},sampleRate:{ideal:48000}}});
+    const src=this.ctx.createMediaStreamSource(this.stream);this.processor=this.ctx.createScriptProcessor(4096,1,1);
+    this.processor.onaudioprocess=e=>{if(!this.ws||this.ws.readyState!==1)return;const f=ds(e.inputBuffer.getChannelData(0),this.ctx.sampleRate,OUT_SR);let sum=0;for(let i=0;i<f.length;i++)sum+=f[i]*f[i];$('micLevel').style.width=Math.min(100,Math.sqrt(sum/f.length)*260)+'%';const pcm=f2i(f);this.ws.send(JSON.stringify({action:'operator_audio',handoff_id:this.id,audio:arrayBufferToB64(pcm.buffer),sample_rate:OUT_SR}))};
+    const mute=this.ctx.createGain();mute.gain.value=0;src.connect(this.processor);this.processor.connect(mute);mute.connect(this.ctx.destination);
+  }
+  async play(b64,rate){
+    const buf=b64ToArrayBuffer(b64);this.queue.push({buf,rate});if(!this.playing)this._drain().catch(()=>{this.playing=false})
+  }
+  async _drain(){
+    if(!this.queue.length){this.playing=false;return}this.playing=true;const item=this.queue.shift();const i16=new Int16Array(item.buf),f32=new Float32Array(i16.length);for(let i=0;i<i16.length;i++)f32[i]=i16[i]/32768;
+    if(!this.playCtx)this.playCtx=new(window.AudioContext||window.webkitAudioContext)();if(this.playCtx.state==='suspended')await this.playCtx.resume().catch(()=>{});
+    const ab=this.playCtx.createBuffer(1,f32.length,item.rate);ab.getChannelData(0).set(f32);const s=this.playCtx.createBufferSource();s.buffer=ab;s.connect(this.playCtx.destination);s.onended=()=>this._drain();s.start();
+  }
+  stop(){
+    if(this.processor){try{this.processor.disconnect()}catch(e){}}this.processor=null;
+    if(this.stream){this.stream.getTracks().forEach(t=>t.stop())}this.stream=null;
+    if(this.ctx){this.ctx.close().catch(()=>{})}this.ctx=null;
+    if(this.ws&&this.ws.readyState===1)this.ws.close();this.ws=null;this.state='Idle';$('micLevel').style.width='0%';
+  }
+}
+async function pickUp(){
+  if(!selected)return;try{if(bridge)bridge.stop();bridge=new AudioBridge(selected);await bridge.open();await bridge.startMic();const data=await api('/api/handoffs/'+selected.id+'/accept',{method:'POST',body:JSON.stringify({operator_name:$('operatorName').value.trim()||'Human Agent'})});selected=data.handoff;toast('Call connected');renderDetail();loadHandoffs()}catch(e){if(bridge)bridge.stop();toast(e.message||'Could not pick up')}
+}
+async function reconnect(){if(!selected)return;try{if(bridge)bridge.stop();bridge=new AudioBridge(selected);await bridge.open();await bridge.startMic();toast('Audio reconnected');renderDetail()}catch(e){toast(e.message||'Audio failed')}}
+async function resolve(){if(!selected)return;try{const note=$('resolveNote').value.trim();const data=await api('/api/handoffs/'+selected.id+'/resolve',{method:'POST',body:JSON.stringify({note})});if(bridge)bridge.stop();selected=data.handoff;toast('Resolved');renderDetail();loadHandoffs()}catch(e){toast('Could not resolve')}}
+$('btnAccept').onclick=pickUp;$('btnReconnect').onclick=reconnect;$('btnResolve').onclick=resolve;
+$('operatorName').value=localStorage.operatorName||'Human Agent';$('operatorName').oninput=e=>localStorage.operatorName=e.target.value;
+$('hostLabel').textContent=location.host;loadHandoffs();pollTimer=setInterval(loadHandoffs,1800);
+</script>
+</body>
+</html>

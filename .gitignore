@@ -1,0 +1,35 @@
+# Secrets and TLS material
+.env
+*.pem
+*.key
+certs/
+
+# Runtime state: agents, tools, handoff transcripts, uploaded documents
+data/
+
+# Logs and PID files
+logs/
+*.log
+*.pid
+
+# Model weights, caches and vendored dependencies (fetched during setup)
+indic/hf_cache/
+indic/pyenv/
+hf_cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editor / OS / backups
+.DS_Store
+.vscode/
+.idea/
+*.bak
+*.orig
+
+# Third-party media we do not redistribute; drop your own hold music here.
+Morning_Glass.mp3
+static/hold_music.mp3

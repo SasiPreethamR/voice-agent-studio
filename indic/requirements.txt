@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+torch
+torchaudio
+transformers==4.46.1
+soundfile
+onnx==1.20.1
+onnxruntime==1.20.1
+onnxruntime-gpu==1.20.1
+# parler-tts must be installed from git:
+#   pip install git+https://github.com/huggingface/parler-tts.git

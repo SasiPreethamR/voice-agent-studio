@@ -1,0 +1,2519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Voice Agent Studio</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>◉</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#09090b;--bg1:#111113;--bg2:#18181b;--bg3:#1f1f23;
+  --border:rgba(255,255,255,.06);--border-h:rgba(255,255,255,.1);
+  --surface:rgba(255,255,255,.03);--surface-h:rgba(255,255,255,.055);
+  --text:#fafafa;--text2:#a1a1aa;--text3:#71717a;--text4:#52525b;
+  --accent:#e4e4e7;--accent2:#a1a1aa;
+  --green:#22c55e;--red:#ef4444;--blue:#3b82f6;--amber:#eab308;
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --r:12px;--rs:8px;
+  --agent-c1:161,161,170;--agent-c2:113,113,122;
+  --agent-hex1:#a1a1aa;--agent-hex2:#71717a;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);
+  overflow:hidden;-webkit-font-smoothing:antialiased;font-feature-settings:'cv02','cv03','cv04','cv11'}
+
+/* ── NAV ─────────────────────────────────────────────────── */
+nav{display:flex;align-items:center;height:52px;padding:0 24px;border-bottom:1px solid var(--border);
+  background:var(--bg);position:relative;z-index:20;flex-shrink:0}
+.nav-brand{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.02em;margin-right:32px;
+  display:flex;align-items:center;gap:8px}
+.nav-brand .mark{width:7px;height:7px;border-radius:50%;background:var(--text3);display:inline-block}
+.nav-tabs{display:flex;gap:2px;height:100%}
+.nav-tab{display:flex;align-items:center;gap:6px;padding:0 16px;height:100%;background:none;border:none;
+  color:var(--text3);font-family:var(--font);font-size:13px;font-weight:450;cursor:pointer;
+  border-bottom:2px solid transparent;transition:color .15s}
+.nav-tab:hover{color:var(--text2)}
+.nav-tab.active{color:var(--text);border-bottom-color:var(--text)}
+.nav-tab svg{width:16px;height:16px;opacity:.5}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.svc-row{display:flex;gap:6px;align-items:center}
+.svc-dot{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text3);font-weight:450}
+.svc-dot .d{width:6px;height:6px;border-radius:50%;background:var(--text4)}
+.svc-dot .d.on{background:var(--green)}.svc-dot .d.off{background:var(--red)}
+.ws-stat{font-size:11px;color:var(--text4);display:flex;align-items:center;gap:5px}
+.ws-stat .wd{width:6px;height:6px;border-radius:50%;background:var(--text4)}
+.ws-stat .wd.online{background:var(--green)}
+.tour-launch{height:28px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border-radius:999px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text2);
+  font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;transition:.15s}
+.tour-launch:hover{background:rgba(255,255,255,.08);border-color:var(--border-h);color:var(--text)}
+.tour-launch svg{width:14px;height:14px;opacity:.75}
+
+/* ── VIEWS ───────────────────────────────────────────────── */
+.view{display:none;flex:1;overflow:hidden}.view.active{display:flex}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* ── SANDBOX VIEW ────────────────────────────────────────── */
+.sandbox{display:flex;flex:1;overflow:hidden}
+.sb-sidebar{width:280px;border-right:1px solid var(--border);display:flex;flex-direction:column;
+  background:var(--bg1);flex-shrink:0;overflow:hidden}
+.sb-agent-info{flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:0}
+.sai-empty{color:var(--text4);font-size:12px;text-align:center;padding:40px 16px;line-height:1.6}
+.sai-hdr{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.sai-vibe{width:36px;height:36px;border-radius:50%;flex-shrink:0}
+.sai-name{font-size:14px;font-weight:550;color:var(--text1);line-height:1.3}
+.sai-meta{font-size:11px;color:var(--text4);margin-top:2px}
+.sai-section{margin-bottom:16px}
+.sai-label{font-size:10px;font-weight:550;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text4);margin-bottom:8px}
+.sai-instructions{font-size:12px;color:var(--text3);line-height:1.6;white-space:pre-wrap;
+  max-height:200px;overflow-y:auto;word-break:break-word}
+.sai-instructions:empty::after{content:'No instructions configured';color:var(--text4);font-style:italic}
+.sai-tool-list{display:flex;flex-direction:column;gap:6px}
+.sai-tool{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.05)}
+.sai-tool-name{font-size:12px;font-weight:500;color:var(--text2);display:flex;align-items:center;gap:6px}
+.sai-tool-name .api-type{font-size:9px}
+.sai-tool-desc{font-size:11px;color:var(--text4);margin-top:3px;line-height:1.4}
+.sai-tool-params{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.sai-tool-param{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.04);
+  color:var(--text4);border:1px solid rgba(255,255,255,.04)}
+.sai-settings{display:flex;flex-wrap:wrap;gap:8px}
+.sai-setting{padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.05);font-size:11px;color:var(--text3)}
+.sai-setting b{color:var(--text2);font-weight:500;margin-right:4px}
+.sai-edit-btn{width:100%;padding:8px;border-radius:8px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);color:var(--text3);font-size:12px;font-weight:450;
+  cursor:pointer;font-family:var(--font);transition:.15s;margin-top:auto}
+.sai-edit-btn:hover{background:rgba(255,255,255,.08);color:var(--text1)}
+.sb-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative}
+.sb-agent-bg{position:absolute;inset:0;opacity:0;transition:opacity 1.5s ease;overflow:hidden}
+.sb-agent-bar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;padding:16px;z-index:2}
+.agent-pill-wrap{position:relative}
+.agent-pill{display:flex;align-items:center;gap:8px;padding:6px 16px;border-radius:40px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);backdrop-filter:blur(12px);
+  font-size:12px;color:var(--text2);font-weight:450;transition:all .3s;cursor:pointer;user-select:none}
+.agent-pill:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12)}
+.agent-pill .ap-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);transition:background .3s}
+.agent-pill .ap-name{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.agent-pill .ap-chev{width:10px;height:10px;opacity:.4;transition:transform .2s,opacity .2s}
+.agent-pill-wrap.open .ap-chev{opacity:.7;transform:rotate(180deg)}
+/* Agent dropdown */
+.agent-dd{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  width:320px;max-height:0;overflow:hidden;opacity:0;pointer-events:none;
+  background:rgba(20,20,22,.96);border:1px solid rgba(255,255,255,.07);border-radius:12px;
+  backdrop-filter:blur(32px);box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03) inset;
+  transition:max-height .3s cubic-bezier(.4,0,.2,1),opacity .2s;z-index:200}
+.agent-dd.open{max-height:360px;opacity:1;pointer-events:auto}
+.agent-dd-search{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.05)}
+.agent-dd-search svg{width:14px;height:14px;color:var(--text4);flex-shrink:0}
+.agent-dd-search input{flex:1;background:none;border:none;outline:none;color:var(--text1);
+  font-family:var(--font);font-size:12px;letter-spacing:.01em}
+.agent-dd-search input::placeholder{color:var(--text4)}
+.agent-dd-list{overflow-y:auto;max-height:300px;padding:4px}
+.agent-dd-list::-webkit-scrollbar{width:4px}
+.agent-dd-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:4px}
+.ad-item{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:8px;
+  cursor:pointer;transition:background .15s;position:relative}
+.ad-item:hover{background:rgba(255,255,255,.05)}
+.ad-item.active{background:rgba(255,255,255,.04)}
+.ad-aura{width:32px;height:32px;border-radius:50%;flex-shrink:0;position:relative}
+.ad-aura canvas{width:32px;height:32px;border-radius:50%}
+.ad-item.active .ad-aura{box-shadow:0 0 0 1.5px rgba(255,255,255,.2)}
+.ad-info{flex:1;min-width:0}
+.ad-name{font-size:12px;font-weight:500;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ad-desc{font-size:10px;color:var(--text4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.ad-check{width:14px;height:14px;color:var(--text3);opacity:0;flex-shrink:0}
+.ad-item.active .ad-check{opacity:1}
+/* Agent tooltip (portal, positioned by JS) */
+#agentTooltip{position:fixed;width:260px;padding:14px 16px;background:rgba(20,20,22,.98);border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;backdrop-filter:blur(24px);box-shadow:0 12px 40px rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;
+  transform:translateX(-4px);z-index:9999}
+#agentTooltip.show{opacity:1;transform:translateX(0);pointer-events:auto}
+.adt-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.adt-dot{width:6px;height:6px;border-radius:50%}
+.adt-title{font-size:12px;font-weight:600;color:var(--text1)}
+.adt-section{margin-bottom:8px}
+.adt-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text4);margin-bottom:3px;font-weight:500}
+.adt-val{font-size:11px;color:var(--text2);line-height:1.5}
+.adt-val.mono{font-family:'SF Mono',Monaco,Consolas,monospace;font-size:10px;color:var(--text3);
+  background:rgba(255,255,255,.03);padding:4px 6px;border-radius:4px;max-height:52px;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.adt-tags{display:flex;flex-wrap:wrap;gap:4px}
+.adt-tag{font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.05);color:var(--text3);font-weight:450}
+.adt-row{display:flex;gap:12px}
+.adt-row .adt-section{flex:1}
+.orb-wrap{position:relative;width:300px;height:300px;margin-bottom:28px;z-index:1;overflow:visible}
+#orbCanvas{position:absolute;top:50%;left:50%;width:760px;height:760px;transform:translate(-50%,-50%);pointer-events:none}
+.sb-label{font-size:13px;color:var(--text3);font-weight:400;margin-bottom:32px;min-height:18px;z-index:1;letter-spacing:.01em}
+.sb-ctrls{display:flex;gap:12px;z-index:1}
+.sb-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 28px;border:none;border-radius:40px;
+  font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.sb-btn-start{background:var(--text);color:var(--bg);box-shadow:0 2px 20px rgba(255,255,255,.08)}
+.sb-btn-start:hover{box-shadow:0 4px 30px rgba(255,255,255,.15);transform:translateY(-1px)}
+.sb-btn-start:disabled{opacity:.3;pointer-events:none}
+.sb-btn-end{background:transparent;color:var(--text3);border:1px solid var(--border)}
+.sb-btn-end:hover{border-color:var(--border-h);color:var(--text2)}.sb-btn-end:disabled{opacity:.25;pointer-events:none}
+.partial-bar{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:12px;
+  color:var(--text4);font-style:italic;z-index:1;max-width:70%;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-transcript{width:380px;border-left:1px solid var(--border);display:flex;flex-direction:column;
+  background:var(--bg1);flex-shrink:0}
+.sb-trans-hdr{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:500;color:var(--text2)}
+.transcript{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+
+/* messages */
+.msg{max-width:85%;padding:10px 14px;border-radius:var(--r);font-size:13px;line-height:1.6;
+  animation:msgIn .3s cubic-bezier(.4,0,.2,1)}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg.user{align-self:flex-end;background:rgba(255,255,255,.06);border:1px solid var(--border)}
+.msg.bot{align-self:flex-start;background:transparent;border:1px solid var(--border)}
+.msg.system{align-self:center;background:var(--surface);border:1px solid var(--border);
+  font-size:11px;color:var(--text3);text-align:center;max-width:90%;border-radius:20px;padding:6px 14px}
+.msg .ts{font-size:10px;color:var(--text4);margin-top:4px}
+.msg.tool-call{background:rgba(255,255,255,.02);border:1px solid var(--border)}
+.msg.tool-result{background:rgba(255,255,255,.02);border:1px solid var(--border)}
+.msg pre{margin:0;white-space:pre-wrap;font-size:11px;color:var(--text3);max-height:120px;overflow-y:auto;font-family:'SF Mono','Fira Code',monospace}
+
+/* ── AGENTS VIEW ─────────────────────────────────────────── */
+.agents-view{flex-direction:column;overflow-y:auto;padding:32px 40px}
+.agents-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.agents-top h2{font-size:20px;font-weight:600;letter-spacing:-.02em}
+.agents-top p{font-size:13px;color:var(--text3);margin-top:4px}
+.btn-create{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--rs);
+  background:var(--text);color:var(--bg);font-family:var(--font);font-size:13px;font-weight:500;
+  border:none;cursor:pointer;transition:.15s}
+.btn-create:hover{opacity:.9}
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.ag-card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);
+  padding:0;cursor:pointer;transition:all .2s;overflow:hidden;position:relative}
+.ag-card:hover{border-color:var(--border-h);box-shadow:0 4px 24px rgba(0,0,0,.3)}
+.ag-card.active{border-color:rgba(255,255,255,.15)}
+.ag-vibe{height:3px;width:100%;transition:background .3s}
+.ag-body{padding:18px 20px 16px}
+.ag-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.ag-name{font-size:15px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.ag-active-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(34,197,94,.4)}
+.ag-actions{display:flex;gap:2px}
+.ag-btn{background:none;border:none;color:var(--text4);cursor:pointer;padding:4px 6px;border-radius:4px;
+  font-size:13px;transition:.15s}
+.ag-btn:hover{color:var(--text2);background:var(--surface)}
+.ag-desc{font-size:12px;color:var(--text3);line-height:1.5;margin-bottom:12px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ag-tags{display:flex;flex-wrap:wrap;gap:4px}
+.ag-tag{font-size:10px;padding:3px 8px;border-radius:4px;background:var(--surface);
+  color:var(--text3);border:1px solid var(--border);font-weight:450}
+
+/* Agents sub-tabs */
+.agents-view{display:flex;flex-direction:column;flex:1;overflow:hidden;padding:32px 40px 0}
+.agents-subtabs{display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0}
+.agents-subtab{padding:10px 20px;background:none;border:none;color:var(--text3);font-family:var(--font);
+  font-size:13px;font-weight:450;cursor:pointer;border-bottom:2px solid transparent;transition:.15s}
+.agents-subtab:hover{color:var(--text2)}
+.agents-subtab.active{color:var(--text);border-bottom-color:var(--text)}
+.agents-panel{display:none;flex:1;overflow-y:auto;padding:24px 0 32px}
+.agents-panel.active{display:block}
+.av-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.av-api-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:.2s}
+.av-api-card:hover{border-color:var(--border-h);box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.av-api-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.av-api-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px}
+.av-api-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s}
+.av-api-card:hover .av-api-actions{opacity:1}
+.av-api-desc{font-size:12px;color:var(--text3);line-height:1.5;margin-bottom:10px}
+.av-api-tags{display:flex;flex-wrap:wrap;gap:4px}
+.av-api-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--surface);color:var(--text4);border:1px solid var(--border)}
+.av-doc-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;
+  display:flex;align-items:center;gap:12px;transition:.15s}
+.av-doc-card:hover{border-color:var(--border-h)}
+.av-doc-icon{font-size:24px;opacity:.5}
+.av-doc-info{flex:1;min-width:0}
+.av-doc-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.av-doc-meta{font-size:11px;color:var(--text4);margin-top:2px}
+.doc-kquest{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;
+  padding:1px 7px;margin-left:6px;color:var(--text3);background:var(--surface);font-size:10px;white-space:nowrap}
+.doc-kquest.done{color:var(--green);border-color:rgba(34,197,94,.22);background:rgba(34,197,94,.06)}
+.doc-kquest.generating{color:var(--amber);border-color:rgba(245,158,11,.24);background:rgba(245,158,11,.06)}
+.av-doc-actions{display:flex;align-items:center;gap:4px}
+.av-doc-del{background:none;border:none;color:var(--text4);cursor:pointer;font-size:13px;padding:6px;border-radius:4px;
+  opacity:0;transition:.15s}
+.av-doc-card:hover .av-doc-del{opacity:1}
+.av-doc-del:hover{color:var(--red);background:rgba(239,68,68,.06)}
+.doc-browser-head{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 4px}
+.doc-crumbs{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
+.doc-crumb{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text3);
+  font-family:var(--font);font-size:11px;padding:5px 9px;cursor:pointer;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-crumb:hover{color:var(--text);border-color:var(--border-h)}
+.doc-crumb.current{color:var(--text);background:var(--bg2);cursor:default}
+.doc-browser-right{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.doc-browser-summary{font-size:11px;color:var(--text4);white-space:nowrap}
+.doc-browser-action{height:28px;padding:0 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface);
+  color:var(--text3);font-family:var(--font);font-size:11px;cursor:pointer}
+.doc-browser-action:hover{color:var(--red);border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.06)}
+.av-folder-card{cursor:pointer}
+.av-folder-card .av-doc-icon{opacity:.75}
+.av-upload{border:1.5px dashed var(--border);border-radius:var(--r);padding:32px;text-align:center;
+  cursor:pointer;transition:.2s;margin-bottom:16px}
+.av-upload:hover,.av-upload.drag{border-color:var(--text3);background:var(--surface)}
+.av-upload .uz-icon{font-size:28px;margin-bottom:8px;opacity:.3}
+.av-upload p{font-size:12px;color:var(--text4)}
+.upload-actions{display:flex;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.upload-actions button{height:30px;padding:0 12px;border-radius:var(--rs);border:1px solid var(--border);
+  background:var(--surface);color:var(--text2);font-family:var(--font);font-size:12px;cursor:pointer}
+.upload-actions button:hover{background:var(--surface-h);color:var(--text)}
+.ingest-status{font-size:11px;color:var(--text4);margin-top:10px;min-height:14px}
+/* ── Upload Queue ──────────────────────────────────────── */
+.upload-queue{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.uq-item{display:flex;align-items:center;gap:7px;padding:5px 10px;border-radius:var(--rs);
+  border:1px solid var(--border);background:var(--bg);font-size:11px;flex-wrap:nowrap;min-width:0}
+.uq-item.uq-run{border-color:rgba(59,130,246,.25);background:rgba(59,130,246,.04)}
+.uq-item.uq-ok{border-color:rgba(34,197,94,.2);background:rgba(34,197,94,.04)}
+.uq-item.uq-warn{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04)}
+.uq-item.uq-err{border-color:rgba(239,68,68,.2);background:rgba(239,68,68,.04)}
+.uq-item.uq-wait{opacity:.6}
+.uq-icon{font-size:12px;flex-shrink:0;width:14px;text-align:center}
+.uq-item.uq-run .uq-icon{display:inline-block;animation:uqspin .9s linear infinite}
+@keyframes uqspin{to{transform:rotate(360deg)}}
+.uq-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text2);font-weight:450}
+.uq-count{flex-shrink:0;color:var(--text4);font-size:10px}
+.uq-bar{flex:0 0 64px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.uq-bar-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .4s}
+.uq-pct{flex-shrink:0;color:var(--text4);font-size:10px;min-width:28px;text-align:right}
+.uq-errtxt{flex:1;min-width:0;color:var(--red);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uq-retry-btn{flex-shrink:0;background:none;border:1px solid var(--border);border-radius:4px;
+  color:var(--text3);cursor:pointer;font-size:11px;padding:2px 6px;font-family:var(--font);transition:.15s}
+.uq-retry-btn:hover{color:var(--text);border-color:var(--border-h)}
+/* Retry K-Quest on folder cards */
+.av-doc-retry{background:none;border:1px solid var(--border);border-radius:var(--rs);
+  color:var(--text4);cursor:pointer;font-size:10px;padding:3px 7px;font-family:var(--font);
+  transition:.15s;white-space:nowrap;opacity:0;margin-right:2px;line-height:1.4}
+.av-doc-card:hover .av-doc-retry{opacity:1}
+.av-doc-retry:hover{color:var(--text);border-color:var(--text3);background:var(--surface)}
+.doc-scope-picker{display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);padding:8px}
+.doc-scope-top{display:flex;align-items:center;gap:8px}
+.doc-scope-search{flex:1;height:34px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg1);
+  color:var(--text);font-family:var(--font);font-size:12px;padding:0 10px;outline:none}
+.doc-scope-search:focus{border-color:var(--text3)}
+.doc-scope-clear{height:30px;padding:0 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface);
+  color:var(--text3);font-family:var(--font);font-size:11px;cursor:pointer;white-space:nowrap}
+.doc-scope-clear:hover{color:var(--text);background:var(--surface-h)}
+.doc-scope-selected{font-size:11px;color:var(--text4);padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-scope-tree{max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:2px;padding-right:2px}
+.doc-tree-row{display:grid;grid-template-columns:22px 16px minmax(0,1fr) auto;align-items:center;gap:7px;
+  min-height:32px;padding:5px 8px 5px calc(8px + var(--depth,0)*16px);border-radius:var(--rs);font-size:12px;color:var(--text3)}
+.doc-tree-row:hover{background:var(--surface)}
+.doc-tree-row input{width:14px;height:14px;accent-color:var(--text2)}
+.doc-tree-toggle{width:20px;height:20px;border:none;background:none;color:var(--text4);font-family:var(--font);font-size:12px;cursor:pointer;border-radius:4px;padding:0}
+.doc-tree-toggle:hover{background:var(--surface-h);color:var(--text2)}
+.doc-tree-toggle.placeholder{visibility:hidden;pointer-events:none}
+.doc-tree-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text2)}
+.doc-tree-count{font-size:10px;color:var(--text4);white-space:nowrap}
+.doc-tree-empty{font-size:12px;color:var(--text4);padding:18px;text-align:center;border:1px dashed var(--border);border-radius:var(--rs)}
+.doc-tree-row.file .doc-tree-name{color:var(--text3)}
+/* Chip selector */
+.chip-select{position:relative}
+.chip-box{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:40px;padding:6px 10px;
+  background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);cursor:text;transition:border .15s}
+.chip-box:focus-within{border-color:var(--text3)}
+.chip-box input{flex:1;min-width:80px;background:none;border:none;outline:none;color:var(--text);
+  font-family:var(--font);font-size:12px}
+.chip-box input::placeholder{color:var(--text4)}
+.api-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px 3px 10px;border-radius:20px;
+  font-size:11px;font-weight:450;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:var(--text2);
+  animation:chipIn .2s ease;white-space:nowrap}
+@keyframes chipIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+.api-chip .ctype{font-size:8px;padding:1px 4px;border-radius:8px;text-transform:uppercase;font-weight:600;letter-spacing:.03em}
+.api-chip .ctype.mock{background:rgba(234,179,8,.12);color:var(--amber)}
+.api-chip .ctype.realtime{background:rgba(34,197,94,.12);color:var(--green)}
+.api-chip .ctype.handoff{background:rgba(20,184,166,.14);color:#5eead4}
+.api-chip .cx{width:14px;height:14px;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;cursor:pointer;color:var(--text4);font-size:10px;transition:.15s;flex-shrink:0}
+.api-chip .cx:hover{background:rgba(255,255,255,.1);color:var(--text2)}
+.chip-dd{position:absolute;left:0;right:0;top:100%;margin-top:4px;max-height:180px;overflow-y:auto;
+  background:rgba(20,20,22,.97);border:1px solid rgba(255,255,255,.08);border-radius:var(--rs);
+  backdrop-filter:blur(20px);box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:10;display:none}
+.chip-dd.open{display:block}
+.chip-dd-item{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;transition:.12s;font-size:12px}
+.chip-dd-item:hover{background:rgba(255,255,255,.05)}
+.chip-dd-item .cdi-name{font-weight:500;color:var(--text)}
+.chip-dd-item .cdi-desc{font-size:10px;color:var(--text4);margin-left:auto;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip-dd-item .cdi-type{font-size:8px;padding:1px 5px;border-radius:8px;text-transform:uppercase;font-weight:600}
+.chip-dd-item .cdi-type.mock{background:rgba(234,179,8,.12);color:var(--amber)}
+.chip-dd-item .cdi-type.realtime{background:rgba(34,197,94,.12);color:var(--green)}
+.chip-dd-item .cdi-type.handoff{background:rgba(20,184,166,.14);color:#5eead4}
+.chip-dd-empty{padding:16px;text-align:center;font-size:11px;color:var(--text4)}
+
+/* ── SIDEBAR COMPONENTS ──────────────────────────────────── */
+.upload-zone{border:1.5px dashed var(--border);border-radius:var(--rs);padding:24px 16px;
+  text-align:center;cursor:pointer;transition:.2s;margin-bottom:14px}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--text3);background:var(--surface)}
+.upload-zone p{font-size:11px;color:var(--text4)}
+.upload-zone .uz-icon{font-size:20px;margin-bottom:6px;opacity:.4}
+.item-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.item-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);
+  padding:10px 12px;display:flex;align-items:center;gap:10px;transition:.15s}
+.item-card:hover{background:var(--surface-h)}
+.item-icon{font-size:16px;opacity:.5;flex-shrink:0}
+.item-info{flex:1;min-width:0}
+.item-info .name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-info .meta{font-size:10px;color:var(--text4);margin-top:2px;display:flex;gap:8px}
+.item-del{background:none;border:none;color:var(--text4);cursor:pointer;font-size:12px;padding:4px;border-radius:4px;transition:.15s;opacity:0}
+.item-card:hover .item-del{opacity:1}
+.item-del:hover{color:var(--red)}
+.api-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:8px;
+  background:var(--surface);border:1px dashed var(--border);border-radius:var(--rs);color:var(--text3);
+  font-size:12px;font-weight:450;cursor:pointer;font-family:var(--font);transition:.2s;margin-bottom:10px}
+.api-add-btn:hover{border-color:var(--border-h);color:var(--text2)}
+.api-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;transition:.15s}
+.api-card:hover{background:var(--surface-h)}
+.api-card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.api-card-name{font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+.api-type{font-size:9px;padding:2px 6px;border-radius:10px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.api-type.mock{background:rgba(234,179,8,.1);color:var(--amber)}
+.api-type.realtime{background:rgba(34,197,94,.1);color:var(--green)}
+.api-type.handoff{background:rgba(20,184,166,.14);color:#5eead4}
+.api-card-desc{font-size:10px;color:var(--text4);margin-bottom:4px;line-height:1.4}
+.api-fields{display:flex;flex-wrap:wrap;gap:3px}
+.api-ftag{font-size:9px;padding:2px 5px;border-radius:3px;background:var(--bg);color:var(--text4);border:1px solid var(--border)}
+
+/* ── MODAL ───────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);z-index:50;
+  display:flex;align-items:center;justify-content:center;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--bg1);border:1px solid var(--border);border-radius:16px;
+  width:560px;max-height:85vh;overflow-y:auto;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:20px;letter-spacing:-.02em}
+.doc-view-modal{width:min(980px,calc(100vw - 32px));height:min(780px,calc(100vh - 32px));display:flex;flex-direction:column;overflow:hidden}
+.doc-view-modal h3{margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-view-path{font-size:11px;color:var(--text4);margin-bottom:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-view-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.doc-view-tab{height:30px;padding:0 11px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface);
+  color:var(--text3);font-family:var(--font);font-size:12px;cursor:pointer}
+.doc-view-tab.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.doc-view-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.doc-view-chip{font-size:10px;color:var(--text4);border:1px solid var(--border);border-radius:999px;padding:3px 8px;background:var(--surface)}
+.doc-view-body{flex:1;min-height:0;overflow:auto;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);padding:16px}
+.doc-view-pre{font-family:var(--font-mono);font-size:12px;line-height:1.65;white-space:pre-wrap;color:var(--text2);word-break:break-word}
+.doc-view-empty{height:100%;display:flex;align-items:center;justify-content:center;color:var(--text4);font-size:12px;text-align:center}
+.doc-view-list{display:flex;flex-direction:column;gap:10px}
+.doc-view-item{border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);padding:11px 12px}
+.doc-view-item-title{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:6px}
+.doc-view-item-meta{font-size:10px;color:var(--text4);margin-bottom:6px}
+.doc-view-item-text{font-size:12px;color:var(--text3);line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.mf{margin-bottom:16px}
+.mf label{display:block;font-size:11px;font-weight:500;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.mf input[type=text],.mf textarea,.mf select{width:100%;background:var(--bg);color:var(--text);
+  border:1px solid var(--border);border-radius:var(--rs);padding:9px 12px;font-family:var(--font);
+  font-size:13px;outline:none;transition:border .15s}
+.mf input:focus,.mf textarea:focus{border-color:var(--text3)}
+.mf textarea{resize:vertical;min-height:60px}
+.mf .hint{font-size:10px;color:var(--text4);margin-top:3px}
+.msec{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.msec:last-of-type{border-bottom:none}
+.msec h4{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+.mbtn{padding:8px 20px;border-radius:var(--rs);font-family:var(--font);font-size:13px;
+  font-weight:500;cursor:pointer;border:none;transition:.15s}
+.mbtn.primary{background:var(--text);color:var(--bg)}
+.mbtn.primary:hover{opacity:.9}
+.mbtn.secondary{background:var(--surface);color:var(--text2);border:1px solid var(--border)}
+.mbtn.secondary:hover{background:var(--surface-h)}
+.mbtn.danger{background:transparent;color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.mbtn.danger:hover{background:rgba(239,68,68,.06)}
+.vibe-preview{width:100%;height:36px;border-radius:var(--rs);margin-bottom:10px;transition:background .3s;border:1px solid var(--border)}
+.vibe-colors{display:flex;gap:10px;align-items:center}
+.vibe-colors input[type=color]{width:36px;height:28px;border:1px solid var(--border);border-radius:6px;
+  background:var(--bg);cursor:pointer;padding:2px}
+.vibe-presets{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+.vibe-presets button{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:.15s}
+.vibe-presets button:hover{transform:scale(1.15)}
+.tool-picker{display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto}
+.tp-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--rs);
+  background:var(--surface);border:1px solid var(--border);font-size:12px}
+.tp-row input[type=checkbox]{accent-color:var(--text2);width:15px;height:15px;cursor:pointer}
+.tp-row .tname{font-weight:500;flex:1}.tp-row .tdesc{color:var(--text4);font-size:10px}
+.inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.inline-grid select,.inline-grid input[type=range]{width:100%}
+select{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--rs);
+  padding:9px 12px;font-family:var(--font);font-size:13px;outline:none;cursor:pointer}
+input[type=range]{-webkit-appearance:none;height:3px;border-radius:3px;background:rgba(255,255,255,.08);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--text);cursor:pointer}
+.fields-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.field-row{display:flex;gap:5px;align-items:center}
+.field-row input{flex:1}.field-row select{width:80px;flex-shrink:0;padding:7px 8px;font-size:12px}
+.field-row .field-req{width:28px;height:28px;accent-color:var(--text2);cursor:pointer}
+.field-row .rm-field{background:none;border:none;color:var(--text4);cursor:pointer;font-size:14px;padding:3px;opacity:.5}
+.field-row .rm-field:hover{color:var(--red);opacity:1}
+.add-field-btn{background:none;border:1px dashed var(--border);border-radius:var(--rs);
+  padding:6px;color:var(--text4);font-size:11px;cursor:pointer;font-family:var(--font);width:100%;text-align:center;transition:.15s}
+.add-field-btn:hover{border-color:var(--text3);color:var(--text3)}
+.mode-toggle{display:flex;border:1px solid var(--border);border-radius:var(--rs);overflow:hidden;margin-bottom:14px}
+.mode-toggle button{flex:1;padding:8px;background:none;border:none;color:var(--text4);font-family:var(--font);font-size:12px;cursor:pointer;transition:.15s}
+.mode-toggle button.active{background:var(--surface);color:var(--text)}
+.mf input[type=password]{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--rs);
+  padding:9px 12px;font-family:var(--font);font-size:13px;outline:none;transition:border .15s}
+.mf label.model-check{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);text-transform:none;letter-spacing:0;margin:0;cursor:pointer}
+.model-stage-row{display:flex;gap:18px;flex-wrap:wrap}
+.model-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.key-row{display:flex;gap:8px}.key-row input{flex:1;min-width:0}.key-row .mbtn{padding:8px 14px;flex-shrink:0}
+.model-test-status{font-size:11px;margin-top:6px;color:var(--text4);min-height:14px}
+.model-test-status.ok{color:var(--green)}.model-test-status.err{color:var(--red)}
+.model-note{font-size:12px;color:var(--text3);line-height:1.6;padding:12px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface)}
+.curl-parse-btn{padding:5px 12px;border-radius:var(--rs);background:var(--surface);
+  color:var(--text2);border:1px solid var(--border);font-size:11px;cursor:pointer;font-family:var(--font);margin-top:4px}
+.parsed-info{margin-top:6px;padding:8px;background:rgba(34,197,94,.04);border:1px solid rgba(34,197,94,.1);
+  border-radius:var(--rs);font-size:11px;color:var(--green)}
+
+/* ── UTILS ───────────────────────────────────────────────── */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:4px}
+.toast-wrap{position:fixed;top:16px;right:16px;z-index:100;display:flex;flex-direction:column;gap:6px}
+.toast{padding:8px 14px;border-radius:var(--rs);font-size:12px;font-weight:450;
+  animation:toastIn .3s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(12px)}
+.toast.info{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15);color:var(--blue)}
+.toast.success{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.15);color:var(--green)}
+.toast.error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15);color:var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.empty{color:var(--text4);font-size:12px;text-align:center;padding:24px;line-height:1.6}
+
+/* ── Guided Tour ─────────────────────────────────────────── */
+.tour-root[hidden]{display:none}
+.tour-root{position:fixed;inset:0;z-index:9000;pointer-events:none}
+.tour-scrim{position:fixed;background:rgba(0,0,0,.62);backdrop-filter:blur(2px);pointer-events:auto;
+  transition:top .18s,left .18s,width .18s,height .18s}
+.tour-focus{position:fixed;border:1.5px solid rgba(255,255,255,.82);border-radius:14px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.12),0 0 36px rgba(var(--agent-c1),.32);
+  transition:top .18s,left .18s,width .18s,height .18s,border-radius .18s;pointer-events:auto}
+.tour-card{position:fixed;width:min(350px,calc(100vw - 32px));padding:16px;border-radius:12px;
+  background:rgba(20,20,22,.98);border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 70px rgba(0,0,0,.65);
+  color:var(--text);pointer-events:auto;transition:top .18s,left .18s}
+.tour-card::before{content:'';position:absolute;width:10px;height:10px;background:inherit;border-left:1px solid rgba(255,255,255,.1);
+  border-top:1px solid rgba(255,255,255,.1);transform:rotate(45deg);top:-6px;left:28px}
+.tour-card.above::before{top:auto;bottom:-6px;transform:rotate(225deg)}
+.tour-kicker{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text4);font-weight:600;margin-bottom:8px}
+.tour-title{font-size:15px;font-weight:600;letter-spacing:-.01em;margin-bottom:6px}
+.tour-text{font-size:12px;line-height:1.55;color:var(--text3);margin-bottom:14px}
+.tour-progress{height:3px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:14px}
+.tour-progress span{display:block;height:100%;width:0;background:var(--text);transition:width .18s}
+.tour-actions{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.tour-count{margin-right:auto;font-size:11px;color:var(--text4);font-variant-numeric:tabular-nums}
+.tour-btn{height:30px;min-width:64px;padding:0 12px;border-radius:8px;border:1px solid var(--border);
+  font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;transition:.15s}
+.tour-btn.ghost{background:var(--surface);color:var(--text3)}
+.tour-btn.ghost:hover{background:var(--surface-h);color:var(--text2)}
+.tour-btn.primary{background:var(--text);color:var(--bg);border-color:transparent}
+.tour-btn.primary:hover{opacity:.9}
+.tour-btn:disabled{opacity:.35;cursor:default}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav>
+    <div class="nav-brand"><span class="mark"></span>Voice Agent Studio</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-view="sandbox">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z"/></svg>
+        Sandbox</button>
+      <button class="nav-tab" data-view="agents">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+        Agents</button>
+    </div>
+    <div class="nav-right">
+      <button class="tour-launch" id="btnTour" type="button" title="Start tour">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75l1.72 4.03 4.03 1.72-4.03 1.72L12 15.25l-1.72-4.03-4.03-1.72 4.03-1.72L12 3.75zM18.5 14.5l.86 2.02 2.02.86-2.02.86-.86 2.02-.86-2.02-2.02-.86 2.02-.86.86-2.02zM5.5 14.5l.86 2.02 2.02.86-2.02.86-.86 2.02-.86-2.02-2.02-.86 2.02-.86.86-2.02z"/></svg>
+        Tour
+      </button>
+      <button class="tour-launch" id="btnModel" type="button" title="Model settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+        <span id="modelLabel">Local</span>
+      </button>
+      <div class="svc-row">
+        <span class="svc-dot" id="svcGeminiWrap" style="display:none"><span class="d" id="svcGemini"></span>Gemini</span>
+        <span class="svc-dot"><span class="d" id="svcStt"></span>STT</span>
+        <span class="svc-dot"><span class="d" id="svcLlm"></span>LLM</span>
+        <span class="svc-dot"><span class="d" id="svcTts"></span>TTS</span>
+        <span class="svc-dot"><span class="d" id="svcIndic"></span>Indic</span>
+      </div>
+      <span class="ws-stat"><span class="wd" id="wsDot"></span><span id="wsLabel">Offline</span></span>
+    </div>
+  </nav>
+
+  <!-- ── SANDBOX ──────────────────────────────────────────── -->
+  <div class="view active" id="view-sandbox">
+    <div class="sandbox">
+      <div class="sb-sidebar">
+        <div class="sb-agent-info" id="sbAgentInfo">
+          <div class="sai-empty">Select an agent to begin</div>
+        </div>
+      </div>
+      <div class="sb-center" id="centerPanel">
+        <div class="sb-agent-bg" id="agentBg"></div>
+        <div class="sb-agent-bar">
+          <div class="agent-pill-wrap" id="agentPillWrap">
+            <div class="agent-pill" id="agentPill">
+              <span class="ap-dot"></span>
+              <span class="ap-name" id="agentPillName">No Agent Selected</span>
+              <svg class="ap-chev" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>
+            </div>
+            <div class="agent-dd" id="agentDD">
+              <div class="agent-dd-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" id="agentDDSearch" placeholder="Search agents...">
+              </div>
+              <div class="agent-dd-list" id="agentDDList"></div>
+            </div>
+          </div>
+        </div>
+        <div class="orb-wrap"><canvas id="orbCanvas" width="1520" height="1520"></canvas></div>
+        <div class="sb-label" id="voiceLabel">Press Start to begin</div>
+        <div class="sb-ctrls">
+          <button class="sb-btn sb-btn-start" id="btnStart">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14a3 3 0 003-3V5a3 3 0 10-6 0v6a3 3 0 003 3z"/><path d="M17 11a1 1 0 10-2 0 3 3 0 01-6 0 1 1 0 10-2 0 5 5 0 004 4.9V19H9a1 1 0 100 2h6a1 1 0 100-2h-2v-3.1A5 5 0 0017 11z"/></svg>
+            Start Call</button>
+          <button class="sb-btn sb-btn-end" id="btnEnd" disabled>End</button>
+        </div>
+        <div class="partial-bar" id="partialBar"></div>
+      </div>
+      <div class="sb-transcript">
+        <div class="sb-trans-hdr">Transcript</div>
+        <div class="transcript" id="transcript"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AGENTS ───────────────────────────────────────────── -->
+  <div class="view" id="view-agents">
+    <div class="agents-view">
+      <div class="agents-top">
+        <div><h2 id="avTitle">Agents</h2><p id="avSubtitle">Create and manage your AI voice agents</p></div>
+        <button class="btn-create" id="btnAddAgent">+ New Agent</button>
+      </div>
+      <div class="agents-subtabs">
+        <button class="agents-subtab active" data-atab="agents">Agents</button>
+        <button class="agents-subtab" data-atab="apis">APIs</button>
+        <button class="agents-subtab" data-atab="docs">Documents</button>
+      </div>
+      <div class="agents-panel active" id="atab-agents">
+        <div class="agents-grid" id="agentsGrid"></div>
+      </div>
+      <div class="agents-panel" id="atab-apis">
+        <div class="av-grid" id="apisGridAV"></div>
+      </div>
+      <div class="agents-panel" id="atab-docs">
+        <div class="av-upload" id="uploadZoneAV">
+          <div class="uz-icon">↑</div><p>Drop files here, or choose files/folders</p>
+          <div class="upload-actions">
+            <button type="button" id="btnUploadFilesAV">Files</button>
+            <button type="button" id="btnUploadFolderAV">Folder</button>
+          </div>
+          <div class="ingest-status" id="ingestStatusAV"></div>
+          <input type="file" id="fileInputAV" multiple style="display:none">
+          <input type="file" id="folderInputAV" multiple webkitdirectory style="display:none">
+        </div>
+        <div class="upload-queue" id="uploadQueueEl"></div>
+        <div class="av-grid" id="docsGridAV"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast-wrap" id="toastWrap"></div>
+<div class="tour-root" id="tourRoot" hidden>
+  <div class="tour-scrim" id="tourScrimTop"></div>
+  <div class="tour-scrim" id="tourScrimRight"></div>
+  <div class="tour-scrim" id="tourScrimBottom"></div>
+  <div class="tour-scrim" id="tourScrimLeft"></div>
+  <div class="tour-focus" id="tourFocus"></div>
+  <div class="tour-card" id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+    <div class="tour-kicker" id="tourKicker">Tour</div>
+    <div class="tour-title" id="tourTitle"></div>
+    <div class="tour-text" id="tourText"></div>
+    <div class="tour-progress"><span id="tourProgress"></span></div>
+    <div class="tour-actions">
+      <span class="tour-count" id="tourCount"></span>
+      <button class="tour-btn ghost" id="tourSkip" type="button">Skip</button>
+      <button class="tour-btn ghost" id="tourPrev" type="button">Back</button>
+      <button class="tour-btn primary" id="tourNext" type="button">Next</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WS_URL=`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/voice`;
+const API=location.origin;
+const INPUT_SR=16000,OUTPUT_SR=24000;
+const BARGE_IN_RMS=0.022;
+let allAgents=[],allTools=[],allDocs=[],allCollections=[],docTree=null,currentDocPath='',activeAgentId=null;
+
+/* ── Orb (3D HD with particles) ───────────────────────────── */
+class OrbVisualizer{
+  constructor(c){
+    this.c=c;this.ctx=c.getContext('2d');
+    this.w=c.width;this.h=c.height;
+    this.cx=this.w/2;this.cy=this.h/2;
+    this.baseR=90;this.amp=0;this.targetAmp=0;
+    this.state='idle';this.t=0;
+    this.c1='161,161,170';this.c2='113,113,122';
+    this.fx='161,161,170';
+    // Cinematic effects
+    this.burst=0;                      // 0..1 — call-start / tool-dispatch pulse
+    this.zeroG=0;this.zeroGTarget=0;   // eased — slows particles like zero-gravity
+    this.dreamy=0;this.dreamyTarget=0; // eased — warm Morning-Glass palette mix
+    this.onCall=0;this.onCallTarget=0; // eased — asteroid ring opacity
+    this.particles=[];this.orbitParticles=[];this.innerParticles=[];
+    this.asteroids=[];                 // polygon "asteroids" orbiting the orb on call
+    this._initParticles();
+    this._initAsteroids();
+    this._raf();
+  }
+  /* Kick the orb: radius swells, particles get pulled inward + enlarged */
+  startBurst(s=1){ this.burst=Math.max(this.burst,Math.min(1,s)); }
+  /* Enter/leave zero-gravity floaty state (for tool-call duration) */
+  setZeroG(on){ this.zeroGTarget=on?1:0; }
+  /* Enter/leave dreamy warm palette (syncs with Morning Glass hold music) */
+  setDreamy(on){ this.dreamyTarget=on?1:0; }
+  /* Toggle polygon asteroids orbiting the orb (on during an active call) */
+  setOnCall(on){ this.onCallTarget=on?1:0; }
+  /* Mix two "r,g,b" strings; t=0 returns a, t=1 returns b */
+  _mixCol(a,b,t){
+    const pa=a.split(',').map(Number),pb=b.split(',').map(Number);
+    return pa.map((v,i)=>Math.round(v+(pb[i]-v)*t)).join(',');
+  }
+  _initParticles(){
+    // Ambient dust
+    for(let i=0;i<50;i++) this.particles.push({
+      x:Math.random()*this.w, y:Math.random()*this.h,
+      r:Math.random()*1.5+0.3, vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3,
+      alpha:Math.random()*.25+.05, phase:Math.random()*Math.PI*2
+    });
+    // Orbit particles — each has a tilted orbital plane for true 3D carousel motion
+    for(let i=0;i<24;i++){
+      const dist=this.baseR*(1.08+Math.random()*.55);
+      const baseSpeed=1.1*Math.pow(this.baseR*1.15/dist,1.3);
+      this.orbitParticles.push({
+        angle:Math.random()*Math.PI*2,
+        dist,
+        ecc:Math.random()*0.25,                          // mild eccentricity
+        argPeri:Math.random()*Math.PI*2,
+        speed:baseSpeed*(Math.random()>.5?1:-1),
+        r:Math.random()*2+.5, alpha:Math.random()*.45+.2,
+        phi:(Math.random()-.5)*Math.PI*.9,
+        yaw:Math.random()*Math.PI*2,
+        phiVel:(Math.random()-.5)*.05,
+        yawVel:(Math.random()-.5)*.08,
+        bobFreq:.6+Math.random()*1.4,
+        bobAmp:.03+Math.random()*.06,
+        phase:Math.random()*Math.PI*2
+      });
+    }
+    // Inner sparks
+    for(let i=0;i<18;i++) this.innerParticles.push({
+      angle:Math.random()*Math.PI*2,
+      dist:Math.random()*this.baseR*.65,
+      speed:.15+Math.random()*.35,
+      r:Math.random()*1.2+.4, alpha:Math.random()*.35+.1,
+      phase:Math.random()*Math.PI*2
+    });
+  }
+  _initAsteroids(){
+    // Polygon asteroids orbit at multiple radii on tilted 3D planes.
+    for(let i=0;i<10;i++){
+      const dist=this.baseR*(2.2+Math.random()*2.6);
+      // Keplerian-ish: closer orbits whip faster. Randomize direction.
+      const baseSpeed=0.55*Math.pow(this.baseR*2.2/dist,1.3);
+      this.asteroids.push({
+        angle:Math.random()*Math.PI*2,
+        dist,
+        a:dist,                                         // semi-major axis
+        ecc:Math.random()*0.35+0.05,                    // 0.05..0.4 eccentricity
+        argPeri:Math.random()*Math.PI*2,                // argument of periapsis (ellipse rotation in plane)
+        speed:baseSpeed*(Math.random()>.5?1:-1),
+        size:18+Math.random()*26,                       // big
+        sides:5+Math.floor(Math.random()*4),            // 5..8
+        rot:Math.random()*Math.PI*2,
+        vrot:(Math.random()-.5)*.6,
+        // 3D tumble — Euler angles around world X, Y, and own-plane spin
+        tumbX:Math.random()*Math.PI*2,
+        tumbY:Math.random()*Math.PI*2,
+        vtumbX:(Math.random()-.5)*1.1,
+        vtumbY:(Math.random()-.5)*1.1,
+        // 3D orbital plane — random tilt and yaw, slowly precesses
+        phi:(Math.random()-.5)*Math.PI*.7,
+        yaw:Math.random()*Math.PI*2,
+        phiVel:(Math.random()-.5)*.04,                  // plane tumbles slowly
+        yawVel:(Math.random()-.5)*.06,                  // plane precesses
+        // small radial/vertical wobbles for organic motion
+        bobFreq:.4+Math.random()*.9,
+        bobAmp:.04+Math.random()*.08,
+        phase:Math.random()*Math.PI*2,
+        alpha:.12+Math.random()*.14
+      });
+    }
+  }
+  setState(s){this.state=s}
+  setAmp(a){this.targetAmp=Math.min(1,a)}
+  setColors(c1,c2){this.c1=c1;this.c2=c2}
+  setEffectColor(c){this.fx=c||this.c1}
+  /* Compute the 3D world point for an orbit (angle, radius) on plane (phi, yaw). */
+  _orbitWorld(angle,radius,phi,yaw){
+    let lx=Math.cos(angle)*radius, ly=0, lz=Math.sin(angle)*radius;
+    const cp=Math.cos(phi),sp=Math.sin(phi);
+    const y1=ly*cp - lz*sp;
+    const z1=ly*sp + lz*cp;
+    ly=y1; lz=z1;
+    const cy=Math.cos(yaw),sy=Math.sin(yaw);
+    const x2=lx*cy + lz*sy;
+    const z2=-lx*sy + lz*cy;
+    return {x:x2,y:ly,z:z2};
+  }
+  /* Perspective-project a 3D world point to screen. */
+  _projectPoint(wx,wy,wz){
+    const CAM=this.baseR*6.5;
+    const persp=CAM/(CAM-wz);
+    return {x:this.cx+wx*persp,y:this.cy+wy*persp,scale:persp,depth:wz};
+  }
+  /* Back-compat wrapper: orbit angle/radius → screen. */
+  _project(angle,radius,phi,yaw){
+    const w=this._orbitWorld(angle,radius,phi,yaw);
+    const p=this._projectPoint(w.x,w.y,w.z);
+    return {x:p.x,y:p.y,scale:p.scale,depth:w.z/radius};
+  }
+  _raf(){
+    this.t+=.016;this.amp+=(this.targetAmp-this.amp)*.12;
+    // Ease cinematic modifiers
+    this.zeroG+=(this.zeroGTarget-this.zeroG)*.05;
+    this.dreamy+=(this.dreamyTarget-this.dreamy)*.04;
+    this.onCall+=(this.onCallTarget-this.onCall)*.04;
+    this.burst*=.955; if(this.burst<.002)this.burst=0;
+    if(this.state==='idle'||this.state==='listening')this.targetAmp*=.97;
+    const ctx=this.ctx;ctx.clearRect(0,0,this.w,this.h);
+    // Swap to warm "Morning Glass" palette when dreamy
+    const _oc1=this.c1,_oc2=this.c2,_ofx=this.fx;
+    if(this.dreamy>.01){
+      this.c1=this._mixCol(_oc1,'255,214,170',this.dreamy*.6);
+      this.c2=this._mixCol(_oc2,'198,168,230',this.dreamy*.55);
+      this.fx=this._mixCol(_ofx,'255,226,190',this.dreamy*.45);
+    }
+    let glow,ps=2,pa=.04,pAct=.3;
+    switch(this.state){
+      case'idle':glow=.08;ps=1.2;pa=.015;pAct=.3;break;
+      case'listening':glow=.18;pa=.04+this.amp*.25;pAct=.6+this.amp*.4;break;
+      case'processing':glow=.15;ps=3;pa=.03;pAct=.8;break;
+      case'speaking':glow=.25;pa=.05+this.amp*.3;pAct=.7+this.amp*.3;break;
+      default:glow=.08;pAct=.3;
+    }
+    // Zero-gravity brightens things slightly (suspended dust catches light)
+    glow+=this.dreamy*.06;
+    const pulse=Math.sin(this.t*ps)*pa;
+    // Call-start / tool burst makes the orb swell outward
+    const burstR=1+this.burst*.28;
+    const r=this.baseR*(1+pulse+this.amp*.12)*burstR;
+    // ── Background nebula ──
+    const bg=ctx.createRadialGradient(this.cx,this.cy,r*.3,this.cx,this.cy,r*4);
+    bg.addColorStop(0,`rgba(${this.c1},${glow*.45})`);bg.addColorStop(.4,`rgba(${this.c2},${glow*.15})`);
+    bg.addColorStop(1,'transparent');ctx.fillStyle=bg;ctx.fillRect(0,0,this.w,this.h);
+    // ── Ambient dust particles ──
+    this._drawDust(ctx,r,pAct);
+    // ── BACK-SIDE orbit particles + asteroids (behind the sphere) ──
+    this._drawOrbits(ctx,r,pAct,-1,true);
+    if(this.onCall>.01) this._drawAsteroids(ctx,r,-1,true);
+    // ── Outer aura ──
+    ctx.beginPath();ctx.arc(this.cx,this.cy,r*1.5,0,Math.PI*2);
+    const oa=ctx.createRadialGradient(this.cx,this.cy,r*.85,this.cx,this.cy,r*1.5);
+    oa.addColorStop(0,`rgba(${this.c1},${glow*.45})`);oa.addColorStop(1,'transparent');
+    ctx.fillStyle=oa;ctx.fill();
+    // ── Shadow depth ──
+    ctx.beginPath();ctx.arc(this.cx+r*.08,this.cy+r*.12,r*1.08,0,Math.PI*2);
+    const sd=ctx.createRadialGradient(this.cx+r*.08,this.cy+r*.12,r*.6,this.cx,this.cy,r*1.08);
+    sd.addColorStop(0,`rgba(${this.c2},.07)`);sd.addColorStop(1,'transparent');
+    ctx.fillStyle=sd;ctx.fill();
+    // ── Main sphere (3D lit) ──
+    ctx.beginPath();ctx.arc(this.cx,this.cy,r,0,Math.PI*2);
+    const mg=ctx.createRadialGradient(this.cx-r*.3,this.cy-r*.3,r*.04,this.cx+r*.1,this.cy+r*.15,r);
+    mg.addColorStop(0,'rgba(255,255,255,.13)');
+    mg.addColorStop(.25,`rgba(${this.c1},.38)`);
+    mg.addColorStop(.6,`rgba(${this.c2},.22)`);
+    mg.addColorStop(.85,`rgba(${this.c2},.08)`);
+    mg.addColorStop(1,`rgba(${this.c2},.02)`);
+    ctx.fillStyle=mg;ctx.fill();
+    // ── Glass reflection arc ──
+    ctx.save();ctx.beginPath();ctx.arc(this.cx,this.cy,r,0,Math.PI*2);ctx.clip();
+    ctx.beginPath();ctx.ellipse(this.cx-r*.18,this.cy-r*.42,r*.55,r*.18,-0.4,0,Math.PI*2);
+    const gl=ctx.createRadialGradient(this.cx-r*.18,this.cy-r*.42,0,this.cx-r*.18,this.cy-r*.42,r*.55);
+    gl.addColorStop(0,`rgba(255,255,255,${.07+glow*.25})`);gl.addColorStop(1,'transparent');
+    ctx.fillStyle=gl;ctx.fill();ctx.restore();
+    // ── Fresnel rim ──
+    ctx.beginPath();ctx.arc(this.cx,this.cy,r,0,Math.PI*2);
+    const fr=ctx.createRadialGradient(this.cx,this.cy,r*.72,this.cx,this.cy,r);
+    fr.addColorStop(0,'transparent');fr.addColorStop(.82,'transparent');
+    fr.addColorStop(1,`rgba(${this.c1},${.12+glow*.55})`);
+    ctx.fillStyle=fr;ctx.fill();
+    // ── Specular highlight ──
+    const sx=this.cx-r*.28,sy=this.cy-r*.3;
+    ctx.beginPath();ctx.arc(sx,sy,r*.35,0,Math.PI*2);
+    const sp=ctx.createRadialGradient(sx,sy,0,sx,sy,r*.35);
+    sp.addColorStop(0,`rgba(255,255,255,${.08+glow*.35})`);sp.addColorStop(1,'transparent');
+    ctx.fillStyle=sp;ctx.fill();
+    // ── Inner core glow ──
+    const cr=r*(.22+Math.sin(this.t*1.5)*.04);
+    ctx.beginPath();ctx.arc(this.cx,this.cy,cr,0,Math.PI*2);
+    const cg=ctx.createRadialGradient(this.cx,this.cy,0,this.cx,this.cy,cr);
+    cg.addColorStop(0,`rgba(255,255,255,${.18+this.amp*.15})`);cg.addColorStop(.5,`rgba(${this.c1},${.12+this.amp*.1})`);
+    cg.addColorStop(1,'transparent');ctx.fillStyle=cg;ctx.fill();
+    // ── Inner sparks ──
+    this._drawInner(ctx,r);
+    // ── FRONT-SIDE orbit particles + asteroids (in front of sphere) ──
+    this._drawOrbits(ctx,r,pAct,+1,false);
+    if(this.onCall>.01) this._drawAsteroids(ctx,r,+1,false);
+    // ── Surface waves ──
+    if(this.state==='listening'||this.state==='speaking') this._drawWaves(ctx,r);
+    // ── Processing ring ──
+    if(this.state==='processing') this._drawRing(ctx,r);
+    // ── Burst shockwave (call start / tool dispatch) ──
+    if(this.burst>.01){
+      const br=r*(1+(1-this.burst)*1.4);
+      ctx.beginPath();ctx.arc(this.cx,this.cy,br,0,Math.PI*2);
+      ctx.strokeStyle=`rgba(${this.fx},${this.burst*.35})`;
+      ctx.lineWidth=1.5+this.burst*1.5;ctx.stroke();
+      // soft outer halo during burst
+      const bh=ctx.createRadialGradient(this.cx,this.cy,r*.9,this.cx,this.cy,r*2.2);
+      bh.addColorStop(0,`rgba(${this.fx},${this.burst*.18})`);bh.addColorStop(1,'transparent');
+      ctx.fillStyle=bh;ctx.beginPath();ctx.arc(this.cx,this.cy,r*2.2,0,Math.PI*2);ctx.fill();
+    }
+    // Restore base palette (dreamy blend applied only this frame)
+    this.c1=_oc1;this.c2=_oc2;this.fx=_ofx;
+    requestAnimationFrame(()=>this._raf());
+  }
+  /* ── Ambient dust ── */
+  _drawDust(ctx,r,act){
+    const zg=this.zeroG, slow=1-zg*.8;             // motion damper
+    const burst=this.burst;
+    for(const p of this.particles){
+      // Gravity-well pull toward orb during burst — particles rush in and enlarge
+      if(burst>.02){
+        const dx0=this.cx-p.x,dy0=this.cy-p.y;
+        const dd=Math.sqrt(dx0*dx0+dy0*dy0)||1;
+        const pull=burst*.055*(1-Math.min(1,dd/(r*2.6)));
+        p.x+=dx0/dd*pull*dd; p.y+=dy0/dd*pull*dd;
+      }
+      // Zero-G gives a soft orbital drift instead of linear motion
+      if(zg>.05){
+        const dx=this.cx-p.x,dy=this.cy-p.y;
+        p.vx+=(-dy*.00015 - p.vx*.04)*zg;
+        p.vy+=( dx*.00015 - p.vy*.04)*zg;
+      }
+      p.x+=p.vx*(.5+act)*slow;p.y+=p.vy*(.5+act)*slow;p.phase+=.01*slow;
+      const dx=this.cx-p.x,dy=this.cy-p.y,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist>r*2.5){p.x+=dx*.001;p.y+=dy*.001}
+      if(p.x<0)p.x=this.w;if(p.x>this.w)p.x=0;if(p.y<0)p.y=this.h;if(p.y>this.h)p.y=0;
+      const tw=.5+Math.sin(p.phase+this.t*2)*.5;
+      const a=p.alpha*tw*act*(1+burst*1.2+zg*.3);
+      const col=dist<r*2?this.fx:'255,255,255';
+      // Burst enlarges every particle; near-orb dust gets further boost
+      const sz=p.r*(dist<r*2?1+act*.5:1)*(1+burst*1.8+zg*.25);
+      ctx.beginPath();ctx.arc(p.x,p.y,sz,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${col},${dist<r*2?a*1.5:a})`;ctx.fill();
+      if((dist<r*1.6&&act>.4)||burst>.2){
+        ctx.beginPath();ctx.arc(p.x,p.y,sz*3,0,Math.PI*2);
+        const pg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz*3);
+        pg.addColorStop(0,`rgba(${this.fx},${a*.25+burst*.15})`);pg.addColorStop(1,'transparent');
+        ctx.fillStyle=pg;ctx.fill();
+      }
+    }
+  }
+  /* ── Orbit particles with trails (true 3D, perspective-projected)
+     side: -1 → back, +1 → front, 0 → both                            */
+  _drawOrbits(ctx,r,act,side=0,advance=true){
+    const slow=1-this.zeroG*.82;
+    const burst=this.burst;
+    const dt=.016*slow;
+    const projected=this.orbitParticles.map(p=>{
+      if(advance){
+        p.angle+=p.speed*dt*(.5+act);
+        p.yaw+=p.yawVel*dt;
+        p.phi+=p.phiVel*dt;
+      }
+      // Ellipse radius at true anomaly: r = a(1-e²)/(1+e·cos(ν))
+      const nu=p.angle-p.argPeri;
+      const eR=p.dist*(1-p.ecc*p.ecc)/(1+p.ecc*Math.cos(nu));
+      const bob=Math.sin(this.t*p.bobFreq+p.phase)*p.bobAmp*p.dist;
+      const d=(eR-burst*p.dist*.28)+bob+this.amp*15;
+      const cur=this._project(p.angle,d,p.phi,p.yaw);
+      // Trail uses slightly earlier angle but same (current) plane
+      const prv=this._project(p.angle-p.speed*.08*slow,d,p.phi,p.yaw);
+      return {p,cur,prv,d};
+    }).sort((A,B)=>A.cur.depth-B.cur.depth);
+    for(const {p,cur,prv} of projected){
+      if(side<0 && cur.depth>=0) continue;
+      if(side>0 && cur.depth<0) continue;
+      const df=(cur.depth+1)*.5;
+      const a=p.alpha*act*(1+burst*.6)*(.35+df*.85);
+      const sz=p.r*(.8+act*.4)*cur.scale*(1+burst*1.4+this.zeroG*.2);
+      ctx.beginPath();ctx.moveTo(prv.x,prv.y);ctx.lineTo(cur.x,cur.y);
+      ctx.strokeStyle=`rgba(${this.fx},${a*.35})`;ctx.lineWidth=p.r*.7*cur.scale*(1+burst);ctx.stroke();
+      ctx.beginPath();ctx.arc(cur.x,cur.y,sz,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${this.fx},${a})`;ctx.fill();
+      ctx.beginPath();ctx.arc(cur.x,cur.y,sz*3.5,0,Math.PI*2);
+      const pg=ctx.createRadialGradient(cur.x,cur.y,0,cur.x,cur.y,sz*3.5);
+      pg.addColorStop(0,`rgba(${this.fx},${a*.3+burst*.1})`);pg.addColorStop(1,'transparent');
+      ctx.fillStyle=pg;ctx.fill();
+    }
+  }
+  /* ── Inner sparks ── */
+  _drawInner(ctx,r){
+    const slow=1-this.zeroG*.85;
+    ctx.save();ctx.beginPath();ctx.arc(this.cx,this.cy,r*.92,0,Math.PI*2);ctx.clip();
+    for(const p of this.innerParticles){
+      p.angle+=p.speed*.016*slow;
+      const d=p.dist+Math.sin(this.t*.8+p.phase)*(12+this.zeroG*8);
+      const x=this.cx+Math.cos(p.angle)*d,y=this.cy+Math.sin(p.angle)*d;
+      const a=p.alpha*(.5+this.amp*.5+this.burst*.4);
+      const sz=p.r*(1+this.burst*1.2+this.zeroG*.2);
+      ctx.beginPath();ctx.arc(x,y,sz,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.fill();
+      // soft bloom
+      ctx.beginPath();ctx.arc(x,y,sz*2.5,0,Math.PI*2);
+      const ig=ctx.createRadialGradient(x,y,0,x,y,sz*2.5);
+      ig.addColorStop(0,`rgba(${this.fx},${a*.3})`);ig.addColorStop(1,'transparent');
+      ctx.fillStyle=ig;ctx.fill();
+    }
+    ctx.restore();
+  }
+  /* ── Surface waves ── */
+  _drawWaves(ctx,r){
+    for(let w=0;w<3;w++){
+      ctx.beginPath();
+      const off=w*Math.PI*2/3;
+      for(let a=0;a<Math.PI*2;a+=.02){
+        const n=Math.sin(a*4+this.t*2.5+off)*(2+this.amp*20)
+               +Math.sin(a*7+this.t*1.8+off)*(1+this.amp*10);
+        const wr=r+n;
+        a===0?ctx.moveTo(this.cx+Math.cos(a)*wr,this.cy+Math.sin(a)*wr)
+              :ctx.lineTo(this.cx+Math.cos(a)*wr,this.cy+Math.sin(a)*wr);
+      }
+      ctx.closePath();ctx.strokeStyle=`rgba(${this.fx},${.07+w*.04})`;ctx.lineWidth=.8;ctx.stroke();
+    }
+  }
+  /* ── Polygon asteroids orbiting the orb (true 3D carousel w/ tumble)
+     side: -1 → back, +1 → front, 0 → both                              */
+  _drawAsteroids(ctx,r,side=0,advance=true){
+    const slow=1-this.zeroG*.75;
+    const gain=this.onCall;
+    const dt=.016*slow;
+    const proj=this.asteroids.map(a=>{
+      if(advance){
+        a.angle+=a.speed*dt;
+        a.rot+=a.vrot*dt;
+        a.yaw+=a.yawVel*dt;
+        a.phi+=a.phiVel*dt;
+        a.tumbX+=a.vtumbX*dt;
+        a.tumbY+=a.vtumbY*dt;
+      }
+      const nu=a.angle-a.argPeri;
+      const eR=a.dist*(1-a.ecc*a.ecc)/(1+a.ecc*Math.cos(nu));
+      const bob=Math.sin(this.t*a.bobFreq+a.phase)*a.bobAmp*a.dist;
+      const d=eR+bob+this.burst*10;
+      const w=this._orbitWorld(a.angle,d,a.phi,a.yaw);
+      return {a,w,depth:w.z/d};
+    }).sort((A,B)=>A.depth-B.depth);
+    for(const {a,w,depth} of proj){
+      if(side<0 && depth>=0) continue;
+      if(side>0 && depth<0) continue;
+      const df=(depth+1)*.5;
+      const al=a.alpha*gain*(.25+df*.95);
+      const sz=a.size*(1+this.burst*.25);
+      this._drawPolyAsteroid3D(ctx,w,sz,a.rot,a.tumbX,a.tumbY,a.sides,al,df);
+    }
+  }
+  /* Rotate a 3-vec: first around world X by tx, then around world Y by ty. */
+  _rotXY(v,tx,ty){
+    const cx=Math.cos(tx),sx=Math.sin(tx);
+    let y=v.y*cx - v.z*sx, z=v.y*sx + v.z*cx, x=v.x;
+    const cy=Math.cos(ty),sy=Math.sin(ty);
+    const x2=x*cy + z*sy, z2=-x*sy + z*cy;
+    return {x:x2,y,z:z2};
+  }
+  _drawPolyAsteroid3D(ctx,center,r,spin,tumbX,tumbY,sides,alpha,df){
+    if(alpha<.005)return;
+    // Build 3D vertices in a local frame (z=0 face), rotated by spin (around z),
+    // then tumbled by tumbX (world X) and tumbY (world Y), then translated to center.
+    const verts=[];
+    const cs=Math.cos(spin),sn=Math.sin(spin);
+    let zMin=Infinity,zMax=-Infinity;
+    for(let i=0;i<sides;i++){
+      const ang=i*Math.PI*2/sides - Math.PI/2;
+      const jit=1+Math.sin(i*2.3+sides)*.08;
+      const lx0=Math.cos(ang)*r*jit, ly0=Math.sin(ang)*r*jit;
+      // apply spin (rotation in local plane, around local Z)
+      const lx=lx0*cs - ly0*sn;
+      const ly=lx0*sn + ly0*cs;
+      // tumble
+      const t=this._rotXY({x:lx,y:ly,z:0},tumbX,tumbY);
+      // translate to world
+      const wx=center.x+t.x, wy=center.y+t.y, wz=center.z+t.z;
+      if(wz<zMin)zMin=wz; if(wz>zMax)zMax=wz;
+      verts.push(this._projectPoint(wx,wy,wz));
+    }
+    // Compute face normal (for flat-shaded lighting). Cross product of two edges.
+    const e1x=verts[1].x-verts[0].x, e1y=verts[1].y-verts[0].y;
+    const e2x=verts[2].x-verts[0].x, e2y=verts[2].y-verts[0].y;
+    const signedArea=e1x*e2y - e1y*e2x;      // screen-space area; sign ≈ facing
+    const facing=Math.min(1,Math.abs(signedArea)/(r*r*2)); // 0=edge-on, 1=face-on
+    const centerPt=this._projectPoint(center.x,center.y,center.z);
+    // Draw
+    ctx.save();
+    ctx.beginPath();
+    verts.forEach((v,i)=>i===0?ctx.moveTo(v.x,v.y):ctx.lineTo(v.x,v.y));
+    ctx.closePath();
+    // Flat lit gradient — bright center of face when face-on, thin slice when edge-on
+    const avgR=r*centerPt.scale;
+    const g=ctx.createRadialGradient(
+      centerPt.x-avgR*.25, centerPt.y-avgR*.25, avgR*.1,
+      centerPt.x, centerPt.y, avgR*1.1);
+    const faceAlpha=alpha*(.3+facing*.9);
+    g.addColorStop(0,`rgba(${this.fx},${faceAlpha*1.1})`);
+    g.addColorStop(.55,`rgba(${this.fx},${faceAlpha*.55})`);
+    g.addColorStop(1,`rgba(${this.c2},${faceAlpha*.1})`);
+    ctx.fillStyle=g;ctx.fill();
+    // Edge line — more visible when tilted (adds silhouette)
+    ctx.lineWidth=.9;
+    ctx.strokeStyle=`rgba(${this.fx},${alpha*(df>.5?.85:.35)*(.4+(1-facing)*.9)})`;
+    ctx.stroke();
+    // Soft halo only for front, face-on-ish asteroids
+    if(df>.55 && facing>.35){
+      ctx.beginPath();ctx.arc(centerPt.x,centerPt.y,avgR*1.6,0,Math.PI*2);
+      const hg=ctx.createRadialGradient(centerPt.x,centerPt.y,avgR*.9,centerPt.x,centerPt.y,avgR*1.6);
+      hg.addColorStop(0,`rgba(${this.fx},${alpha*.18*facing})`);hg.addColorStop(1,'transparent');
+      ctx.fillStyle=hg;ctx.fill();
+    }
+    ctx.restore();
+  }
+  /* ── Processing ring ── */
+  _drawRing(ctx,r){
+    const sa=this.t*3,al=Math.PI*.8+Math.sin(this.t*2)*Math.PI*.3;
+    ctx.beginPath();ctx.arc(this.cx,this.cy,r+12,sa,sa+al);
+    ctx.strokeStyle=`rgba(${this.fx},.3)`;ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();
+    ctx.beginPath();ctx.arc(this.cx,this.cy,r+12,sa+Math.PI,sa+Math.PI+al*.6);
+    ctx.strokeStyle=`rgba(${this.c2},.2)`;ctx.lineWidth=1.5;ctx.stroke();
+    for(let i=0;i<5;i++){
+      const ang=this.t*(2+i*.3)+i*(Math.PI*2/5);
+      const d=r+12+Math.sin(this.t*2+i)*4;
+      const x=this.cx+Math.cos(ang)*d,y=this.cy+Math.sin(ang)*d;
+      ctx.beginPath();ctx.arc(x,y,1.8+Math.sin(this.t*3+i)*.5,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${this.fx},${.3+Math.sin(this.t*2+i)*.15})`;ctx.fill();
+    }
+  }
+}
+
+/* ── SFX Engine (Web Audio synthesis) ────────────────────── */
+const SFX={
+  _ctx:null,
+  _getCtx(){if(!this._ctx)this._ctx=new(window.AudioContext||window.webkitAudioContext)();return this._ctx},
+  _tone(freq,dur,type='sine',vol=0.12,ramp=0.08){
+    const c=this._getCtx(),o=c.createOscillator(),g=c.createGain();
+    o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(0,c.currentTime);
+    g.gain.linearRampToValueAtTime(vol,c.currentTime+ramp);
+    g.gain.linearRampToValueAtTime(0,c.currentTime+dur);
+    o.connect(g);g.connect(c.destination);o.start(c.currentTime);o.stop(c.currentTime+dur);
+  },
+  /* Two-note ascending chime — agent switch */
+  agentSwitch(){
+    this._tone(880,0.15,'sine',0.10,0.02);
+    setTimeout(()=>this._tone(1174,0.2,'sine',0.10,0.02),100);
+    setTimeout(()=>this._tone(1318,0.25,'sine',0.06,0.02),200);
+  },
+  /* Quick blip — tool call dispatched */
+  toolCall(){
+    this._tone(660,0.08,'sine',0.08,0.01);
+    setTimeout(()=>this._tone(880,0.06,'sine',0.06,0.01),60);
+  },
+  /* Soft ding — tool result received */
+  toolResult(){
+    this._tone(1047,0.18,'triangle',0.09,0.01);
+    setTimeout(()=>this._tone(1319,0.22,'triangle',0.07,0.02),120);
+  },
+  /* Gentle pulse — processing/thinking */
+  processing(){
+    this._tone(440,0.25,'sine',0.05,0.08);
+    setTimeout(()=>this._tone(523,0.2,'sine',0.03,0.06),150);
+  },
+  /* Rising connection tone — call start */
+  callStart(){
+    this._tone(523,0.1,'sine',0.08,0.01);
+    setTimeout(()=>this._tone(659,0.1,'sine',0.08,0.01),80);
+    setTimeout(()=>this._tone(784,0.2,'sine',0.10,0.01),160);
+  },
+  /* Descending disconnect — call end */
+  callEnd(){
+    this._tone(784,0.1,'sine',0.07,0.01);
+    setTimeout(()=>this._tone(523,0.2,'sine',0.06,0.02),100);
+  },
+  /* Subtle tick — message received */
+  message(){this._tone(1200,0.06,'sine',0.04,0.01)},
+  /* Error buzz */
+  error(){this._tone(220,0.15,'sawtooth',0.06,0.01);setTimeout(()=>this._tone(196,0.2,'sawtooth',0.05,0.01),100)}
+};
+
+/* ── Hold Music (static/hold_music.mp3, optional) ──────────────────────────── */
+const HoldMusic={
+  _audio:null,_ready:false,_fadeGain:null,_ctx:null,_src:null,_wired:false,
+  init(){
+    this._audio=new Audio('/static/hold_music.mp3');
+    this._audio.loop=true;
+    this._audio.preload='auto';
+    this._audio.addEventListener('canplaythrough',()=>{this._ready=true},{ once:true });
+  },
+  _ensureCtx(){
+    if(this._wired)return;
+    this._ctx=new(window.AudioContext||window.webkitAudioContext)();
+    this._src=this._ctx.createMediaElementSource(this._audio);
+    this._fadeGain=this._ctx.createGain();
+    this._fadeGain.gain.value=0;
+    this._src.connect(this._fadeGain);
+    this._fadeGain.connect(this._ctx.destination);
+    this._wired=true;
+  },
+  play(){
+    if(!this._ready||!this._audio)return;
+    this._ensureCtx();
+    if(this._ctx.state==='suspended')this._ctx.resume();
+    const now=this._ctx.currentTime;
+    this._fadeGain.gain.cancelScheduledValues(now);
+    this._fadeGain.gain.setValueAtTime(0,now);
+    this._fadeGain.gain.linearRampToValueAtTime(0.25,now+0.8);
+    this._audio.currentTime=0;
+    this._audio.play().catch(()=>{});
+  },
+  stop(){
+    if(!this._audio||!this._wired)return;
+    const now=this._ctx.currentTime;
+    this._fadeGain.gain.cancelScheduledValues(now);
+    this._fadeGain.gain.setValueAtTime(this._fadeGain.gain.value,now);
+    this._fadeGain.gain.linearRampToValueAtTime(0,now+0.5);
+    setTimeout(()=>{this._audio.pause()},600);
+  }
+};
+HoldMusic.init();
+
+/* ── AudioManager ────────────────────────────────────────── */
+class AudioManager{
+  constructor(){this.audioCtx=null;this.stream=null;this.processor=null;this.micMute=null;
+    this.playQueue=[];this.isPlaying=false;this.onChunk=null;this.currentSource=null;this._gen=0;
+    this.playCtx=null;this.playGain=null;this.outputGain=1.8;this.lastPlaybackAt=0}
+  _micConstraints(){return {
+    echoCancellation:{ideal:true},noiseSuppression:{ideal:true},autoGainControl:{ideal:true},
+    channelCount:{ideal:1},sampleRate:{ideal:48000},sampleSize:{ideal:16},latency:{ideal:0.02},
+    googEchoCancellation:true,googEchoCancellation2:true,googDAEchoCancellation:true,
+    googAutoGainControl:true,googAutoGainControl2:true,googNoiseSuppression:true,
+    googNoiseSuppression2:true,googHighpassFilter:true
+  }}
+  _getPlaybackCtx(){
+    if(!this.playCtx||this.playCtx.state==='closed'){
+      this.playCtx=new(window.AudioContext||window.webkitAudioContext)();
+      this.playGain=this.playCtx.createGain();
+      this.playGain.gain.value=this.outputGain;
+      this.playGain.connect(this.playCtx.destination);
+    }
+    return this.playCtx;
+  }
+  async unlockPlayback(){
+    const p=this._getPlaybackCtx();
+    if(p.state==='suspended')await p.resume().catch(()=>{});
+    return p;
+  }
+  async startMic(){
+    if(!navigator.mediaDevices?.getUserMedia)throw new Error('Mic requires HTTPS');
+    this.audioCtx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:48000});
+    await this.unlockPlayback();
+    if(this.audioCtx.state==='suspended')await this.audioCtx.resume().catch(()=>{});
+    this.stream=await navigator.mediaDevices.getUserMedia({audio:this._micConstraints()});
+    const track=this.stream.getAudioTracks()[0];
+    if(track?.applyConstraints)await track.applyConstraints(this._micConstraints()).catch(()=>{});
+    if(track?.getSettings)console.info('Mic AEC settings',track.getSettings());
+    const src=this.audioCtx.createMediaStreamSource(this.stream);
+    this.processor=this.audioCtx.createScriptProcessor(4096,1,1);
+    this.processor.onaudioprocess=e=>{
+      const ds=this._ds(e.inputBuffer.getChannelData(0),this.audioCtx.sampleRate,INPUT_SR);
+      const i16=this._f2i(ds);if(this.onChunk)this.onChunk(i16.buffer);
+    };src.connect(this.processor);this.micMute=this.audioCtx.createGain();this.micMute.gain.value=0;
+    this.processor.connect(this.micMute);this.micMute.connect(this.audioCtx.destination);
+  }
+  stopMic(){if(this.processor){this.processor.disconnect();this.processor=null}
+    if(this.micMute){this.micMute.disconnect();this.micMute=null}
+    if(this.stream){this.stream.getTracks().forEach(t=>t.stop());this.stream=null}
+    if(this.audioCtx){this.audioCtx.close();this.audioCtx=null}this.clearPlayback()}
+  recentlyPlayed(ms=450){return performance.now()-this.lastPlaybackAt<ms}
+  queueAudio(b64,sampleRate=OUTPUT_SR){const bin=atob(b64);const buf=new ArrayBuffer(bin.length);const u8=new Uint8Array(buf);
+    for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);this.playQueue.push(buf);
+    this.playRate=sampleRate||OUTPUT_SR;
+    if(!this.isPlaying)this._play().catch(e=>{console.error('PCM playback failed',e);this.isPlaying=false})}
+  clearPlayback(){this._gen++;this.playQueue=[];
+    if(this.currentSource){try{this.currentSource.stop()}catch(e){}}this.currentSource=null;this.isPlaying=false}
+  async _play(){const gen=this._gen;if(!this.playQueue.length){this.isPlaying=false;return}
+    this.isPlaying=true;const buf=this.playQueue.shift();const i16=new Int16Array(buf);
+    const f32=new Float32Array(i16.length);for(let i=0;i<i16.length;i++)f32[i]=i16[i]/32768;
+    const p=await this.unlockPlayback();if(this._gen!==gen)return;
+    const ab=p.createBuffer(1,f32.length,this.playRate||OUTPUT_SR);ab.getChannelData(0).set(f32);
+    const s=p.createBufferSource();s.buffer=ab;s.connect(this.playGain);this.currentSource=s;
+    s.onended=()=>{this.lastPlaybackAt=performance.now();this.currentSource=null;if(this._gen===gen)this._play().catch(e=>{console.error('PCM playback failed',e);this.isPlaying=false})};
+    s.start()}
+  _ds(buf,from,to){if(from===to)return buf;const r=from/to;const len=Math.floor(buf.length/r);
+    const o=new Float32Array(len);for(let i=0;i<len;i++)o[i]=buf[Math.round(i*r)];return o}
+  _f2i(f){const i=new Int16Array(f.length);for(let j=0;j<f.length;j++){
+    let s=Math.max(-1,Math.min(1,f[j]));i[j]=s<0?s*0x8000:s*0x7FFF}return i}
+}
+
+/* ── VoiceAgent ──────────────────────────────────────────── */
+class VoiceAgent{
+  constructor(){this.ws=null;this.audio=new AudioManager();
+    this.orb=new OrbVisualizer(document.getElementById('orbCanvas'));
+    this.state='idle';this.llmBuf='';this._intFrames=0;this._handoffWaiting=false;this._handoffActive=false;this._handoffId=null}
+  connect(){
+    this.ws=new WebSocket(WS_URL);this.ws.binaryType='arraybuffer';
+    this.ws.onopen=()=>{setWs('Connected','online')};
+    this.ws.onmessage=e=>this._onMsg(e);
+    this.ws.onclose=()=>{setWs('Offline','');setTimeout(()=>this.connect(),3000)};
+    this.ws.onerror=()=>setWs('Error','');
+  }
+  async startCall(){
+    if(ModelConfig.missingKey()){toast('Add your Gemini API key in Model settings','error');openModelModal();return}
+    try{await this.audio.startMic()}catch(e){toast(e.message||'Mic failed','error');return}
+    SFX.callStart();
+    this.orb.startBurst(1);          // cinematic expand on call-start
+    this.orb.setOnCall(true);        // polygon asteroids orbit in
+    this._micPaused=false;
+    this.audio.onChunk=buf=>{
+      if(this._micPaused)return; // Don't send audio during tool execution
+      const i16=new Int16Array(buf);let sum=0;for(let i=0;i<i16.length;i++)sum+=i16[i]*i16[i];
+      const rms=Math.sqrt(sum/i16.length)/32768;this.orb.setAmp(rms*4);
+      if(this._handoffActive&&this._handoffId){
+        if(this.ws?.readyState===1)this.ws.send(JSON.stringify({action:'handoff_audio',handoff_id:this._handoffId,audio:arrayBufferToB64(buf),sample_rate:INPUT_SR}));
+        return
+      }
+      const playbackActive=this.audio.isPlaying||this.audio.recentlyPlayed();
+      if(playbackActive){
+        if(rms<BARGE_IN_RMS){this._intFrames=0;return}
+        this._intFrames++;
+        if(this._intFrames>=2&&this.audio.isPlaying)this.audio.clearPlayback();
+      }else this._intFrames=0;
+      if(this.ws?.readyState===1)this.ws.send(buf);
+    };
+    this.ws.send(JSON.stringify({action:'start_call',agent_id:activeAgentId||null,model:ModelConfig.payload()}));
+    this._setState('listening');
+    document.getElementById('btnStart').disabled=true;
+    document.getElementById('btnEnd').disabled=false;
+  }
+  endCall(){
+    if(this.ws)this.ws.send(JSON.stringify({action:'end_call'}));
+    SFX.callEnd();HoldMusic.stop();
+    this._handoffWaiting=false;this._handoffActive=false;this._handoffId=null;
+    this.orb.setZeroG(false);this.orb.setDreamy(false);
+    this.orb.setOnCall(false);
+    this.audio.stopMic();this._setState('idle');
+    document.getElementById('btnStart').disabled=false;
+    document.getElementById('btnEnd').disabled=true;
+    document.getElementById('partialBar').textContent='';
+  }
+  _onMsg(e){
+    if(typeof e.data!=='string')return;const m=JSON.parse(e.data);
+    switch(m.type){
+      case'status':this._setState(m.state);break;
+      case'stt_partial':document.getElementById('partialBar').textContent=m.text;break;
+      case'stt_final':document.getElementById('partialBar').textContent='';SFX.message();addMsg('user',m.text);break;
+      case'llm_token':this.llmBuf+=m.token;updateBot(this.llmBuf);break;
+      case'tool_call':if(this.llmBuf){finalizeBot();this.llmBuf=''}SFX.toolCall();addToolCall(m.name,m.args);break;
+      case'tool_result':SFX.toolResult();addToolResult(m.name,m.result);break;
+      case'handoff_status':this._handleHandoff(m.handoff);break;
+      case'handoff_audio':HoldMusic.stop();if(m.audio)this.audio.queueAudio(m.audio,m.sample_rate||OUTPUT_SR);this.orb.setAmp(.5);break;
+      case'tool_executing':
+        this._micPaused=true;
+        HoldMusic.play();
+        this.orb.setAmp(.3);
+        this.orb.setZeroG(true);        // suspend particles — floaty feel
+        this.orb.setDreamy(true);       // warm Morning-Glass palette blend
+        this.orb.startBurst(.45);       // soft pulse on dispatch
+        document.getElementById('voiceLabel').textContent='Executing tool…';
+        break;
+      case'tool_done':
+        if(this._handoffWaiting)break;
+        this._micPaused=false;
+        HoldMusic.stop();
+        this.orb.setZeroG(false);
+        this.orb.setDreamy(false);
+        this.orb.startBurst(.3);        // release pulse
+        break;
+      case'llm_done':if(this.llmBuf)finalizeBot();this.llmBuf='';break;
+      case'tts_audio':HoldMusic.stop();this.audio.queueAudio(m.audio);this.orb.setAmp(.5);break;
+      case'interrupt':HoldMusic.stop();this.audio.clearPlayback();if(this.llmBuf)finalizeBot();this.llmBuf='';this._setState('listening');break;
+      case'agent_switched':
+        SFX.agentSwitch();
+        const ag=allAgents.find(a=>a.id===m.agent_id);
+        if(ag){setActiveAgent(ag.id,true);addMsg('system','Switched to '+ag.name)}break;
+      case'error':SFX.error();toast(m.message,'error');break;
+    }
+  }
+  _handleHandoff(handoff){
+    if(!handoff)return;
+    addHandoffStatus(handoff);
+    this._handoffId=handoff.id||this._handoffId;
+    if(handoff.status==='pending'){
+      this._handoffWaiting=true;this._handoffActive=false;this._micPaused=true;
+      HoldMusic.play();this.orb.setAmp(.3);this.orb.setZeroG(true);this.orb.setDreamy(true);
+      document.getElementById('voiceLabel').textContent='Waiting for human...';
+    }else if(handoff.status==='accepted'){
+      this._handoffWaiting=false;this._handoffActive=true;this._micPaused=false;
+      HoldMusic.stop();this.audio.clearPlayback();this.orb.setZeroG(false);this.orb.setDreamy(false);this.orb.startBurst(.5);
+      document.getElementById('voiceLabel').textContent='Human connected';
+    }else if(handoff.status==='resolved'||handoff.status==='cancelled'){
+      this._handoffWaiting=false;this._handoffActive=false;this._micPaused=false;this._handoffId=null;
+      HoldMusic.stop();this.orb.setZeroG(false);this.orb.setDreamy(false);
+      this._setState('listening');
+    }
+  }
+  _setState(s){this.state=s;if(s==='processing'){this.audio.clearPlayback();SFX.processing()}
+    this.orb.setState(s);
+    const labels={idle:'Press Start to begin',listening:'Listening…',processing:'Thinking…',speaking:'Speaking…'};
+    document.getElementById('voiceLabel').textContent=labels[s]||s}
+}
+
+/* ── Transcript ──────────────────────────────────────────── */
+let _botBubble=null;
+function arrayBufferToB64(buf){
+  const bytes=new Uint8Array(buf);let out='';
+  for(let i=0;i<bytes.length;i+=8192){out+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192))}
+  return btoa(out)
+}
+function addMsg(role,text){
+  const el=document.getElementById('transcript');
+  const ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const d=document.createElement('div');d.className='msg '+role;
+  d.innerHTML=text+'<div class="ts">'+ts+'</div>';el.appendChild(d);el.scrollTop=el.scrollHeight;return d}
+function updateBot(text){const el=document.getElementById('transcript');
+  if(!_botBubble){_botBubble=addMsg('bot',text);return}
+  _botBubble.innerHTML=text+'<div class="ts">'+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>';
+  el.scrollTop=el.scrollHeight}
+function finalizeBot(){_botBubble=null}
+function addToolCall(name,args){
+  const el=document.getElementById('transcript');const ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const ah=Object.entries(args||{}).map(e=>'<span style="color:var(--text2)">'+e[0]+'</span>: '+e[1]).join(', ');
+  const d=document.createElement('div');d.className='msg tool-call';
+  d.innerHTML='<div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:3px">⚡ '+name+'</div><div style="font-size:11px;color:var(--text3)">'+ah+'</div><div class="ts">'+ts+'</div>';
+  el.appendChild(d);el.scrollTop=el.scrollHeight}
+function addToolResult(name,result){
+  const el=document.getElementById('transcript');const ts=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  let rh;try{rh='<pre>'+JSON.stringify(JSON.parse(result),null,2)+'</pre>'}catch(e){rh='<div style="font-size:11px;color:var(--text3)">'+result+'</div>'}
+  const d=document.createElement('div');d.className='msg tool-result';
+  d.innerHTML='<div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:3px">↳ '+name+'</div>'+rh+'<div class="ts">'+ts+'</div>';
+  el.appendChild(d);el.scrollTop=el.scrollHeight}
+function addHandoffStatus(handoff){
+  if(!handoff)return;
+  const name=handoff.accepted_by||'Human agent';
+  const status=handoff.status||'pending';
+  let text='Human handoff queued.';
+  if(status==='accepted')text=name+' accepted the handoff.';
+  if(status==='resolved')text='Human handoff resolved.';
+  if(status==='cancelled')text='Human handoff cancelled.';
+  if(handoff.id)text+=' <span style="color:var(--text3)">'+handoff.id+'</span>';
+  addMsg('system',text)
+}
+
+/* ── Agent Management ────────────────────────────────────── */
+function hexToRgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return r+','+g+','+b}
+const VIBES=[
+  {name:'Silver',c1:'#a1a1aa',c2:'#71717a'},{name:'Indigo',c1:'#6366f1',c2:'#4f46e5'},
+  {name:'Emerald',c1:'#10b981',c2:'#059669'},{name:'Amber',c1:'#f59e0b',c2:'#d97706'},
+  {name:'Rose',c1:'#f43f5e',c2:'#e11d48'},{name:'Sky',c1:'#0ea5e9',c2:'#0284c7'},
+  {name:'Violet',c1:'#8b5cf6',c2:'#7c3aed'},{name:'Teal',c1:'#14b8a6',c2:'#0d9488'},
+];
+
+function escapeHtml(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function agentEffectColor(ag,c1){return (ag&&(ag.effect_color||ag.effects_color))||c1||'#a1a1aa'}
+function scopeKey(scope){return (scope.type||'folder')+':'+(scope.value||scope.path||scope.id||'')}
+function scopeLabel(scope){
+  if(!scope)return'';
+  const type=scope.type||'folder',value=scope.value||scope.path||scope.id||'';
+  if(type==='file'){const doc=allDocs.find(d=>d.id===value);return doc?(doc.relative_path||doc.filename):value}
+  if(type==='collection'){const doc=allDocs.find(d=>d.collection_id===value);return doc?(doc.collection_name||'Collection'):value}
+  return value?value+'/':'All documents'
+}
+function collectionRootFolder(collectionId){
+  const roots=[...new Set(allDocs.filter(d=>d.collection_id===collectionId).map(d=>normDocPath(d.relative_path||d.filename).split('/')[0]).filter(Boolean))];
+  return roots.length===1?roots[0]:'';
+}
+function normalizeDocScopeSelections(scopes){
+  const out=[],seen=new Set();
+  (scopes||[]).forEach(scope=>{
+    let item={type:scope.type||'folder',value:scope.value||scope.path||scope.id||''};
+    if(item.type==='collection'){const root=collectionRootFolder(item.value);if(root)item={type:'folder',value:root};else return}
+    if(!item.value&&item.type!=='folder')return;
+    const key=scopeKey(item);if(!seen.has(key)){seen.add(key);out.push(item)}
+  });
+  return out;
+}
+function getDocScopeOptions(){
+  const folders={};
+  const collections={};
+  allDocs.forEach(d=>{
+    const rel=(d.relative_path||d.filename||'').replace(/^\/+|\/+$/g,'');
+    const parts=rel.split('/').filter(Boolean);
+    for(let i=0;i<parts.length-1;i++){const path=parts.slice(0,i+1).join('/');folders[path]=(folders[path]||0)+1}
+    if(d.collection_id)collections[d.collection_id]={type:'collection',value:d.collection_id,label:'Collection: '+(d.collection_name||d.collection_id),count:(collections[d.collection_id]?.count||0)+1};
+  });
+  const folderOpts=Object.keys(folders).sort().map(path=>({type:'folder',value:path,label:path+'/',count:folders[path]}));
+  const fileOpts=folderOpts.length?[]:allDocs.slice().sort((a,b)=>(a.relative_path||a.filename||'').localeCompare(b.relative_path||b.filename||''))
+    .map(d=>({type:'file',value:d.id,label:d.relative_path||d.filename,count:1}));
+  return Object.values(collections).concat(folderOpts,fileOpts)
+}
+
+function renderAgentInfo(){
+  const el=document.getElementById('sbAgentInfo');
+  const ag=allAgents.find(a=>a.id===activeAgentId);
+  if(!ag){el.innerHTML='<div class="sai-empty">Select an agent to begin</div>';return}
+  const c1=ag.vibe_c1||'#a1a1aa',c2=ag.vibe_c2||'#71717a';
+  const fx=agentEffectColor(ag,c1);
+  const voiceLabel={alloy:'Alloy',nova:'Nova',shimmer:'Shimmer',echo:'Echo',onyx:'Onyx',fable:'Fable'}[ag.voice]||ag.voice||'Alloy';
+  const langLabel={en:'English',es:'Spanish',fr:'French',hi:'Hindi',ja:'Japanese',zh:'Chinese',de:'German',as:'Assamese',bn:'Bengali',brx:'Bodo',doi:'Dogri',gu:'Gujarati',kn:'Kannada',kok:'Konkani',ks:'Kashmiri',mai:'Maithili',ml:'Malayalam',mni:'Manipuri',mr:'Marathi',ne:'Nepali',or:'Odia',pa:'Punjabi',sa:'Sanskrit',sat:'Santali',sd:'Sindhi',ta:'Tamil',te:'Telugu',ur:'Urdu'}[ag.language]||ag.language||'English';
+  const tools=(ag.tool_ids||[]).map(tid=>allTools.find(t=>t.id===tid)).filter(Boolean);
+  const docLabels=(ag.document_scopes||[]).map(scopeLabel).filter(Boolean);
+  el.innerHTML='<div class="sai-hdr">'
+    +'<div class="sai-vibe" style="background:linear-gradient(135deg,'+c1+','+c2+')"></div>'
+    +'<div><div class="sai-name">'+ag.name+'</div>'
+    +'<div class="sai-meta">'+voiceLabel+' · '+langLabel+' · '+ag.speed+'x</div></div></div>'
+    +'<div class="sai-section"><div class="sai-label">Instructions</div>'
+    +'<div class="sai-instructions">'+((ag.instructions||'').replace(/</g,'&lt;')||'')+'</div></div>'
+    +(tools.length?'<div class="sai-section"><div class="sai-label">Tools <span style="opacity:.5">'+tools.length+'</span></div>'
+    +'<div class="sai-tool-list">'+tools.map(t=>'<div class="sai-tool">'
+      +'<div class="sai-tool-name"><span class="api-type '+t.mode+'">'+t.mode+'</span>'+t.name+'</div>'
+      +(t.description?'<div class="sai-tool-desc">'+t.description+'</div>':'')
+      +((t.fields||[]).length?'<div class="sai-tool-params">'+(t.fields||[]).map(f=>'<span class="sai-tool-param">'+f.name+(f.required?'*':'')+':'+f.type+'</span>').join('')+'</div>':'')
+      +'</div>').join('')+'</div></div>':'')
+    +'<div class="sai-section"><div class="sai-label">Documents <span style="opacity:.5">'+(docLabels.length||'all')+'</span></div>'
+    +'<div class="sai-tool-params">'+(docLabels.length?docLabels.map(n=>'<span class="sai-tool-param">'+escapeHtml(n)+'</span>').join(''):'<span class="sai-tool-param">All documents</span>')+'</div></div>'
+    +'<div class="sai-section"><div class="sai-label">Settings</div>'
+    +'<div class="sai-settings">'
+    +'<div class="sai-setting"><b>Voice</b>'+voiceLabel+'</div>'
+    +'<div class="sai-setting"><b>Language</b>'+langLabel+'</div>'
+    +'<div class="sai-setting"><b>Speed</b>'+ag.speed+'x</div>'
+    +'<div class="sai-setting"><b>Effects</b><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:'+fx+';box-shadow:0 0 10px '+fx+'66"></span>'+fx+'</span></div>'
+    +'</div></div>'
+    +'<button class="sai-edit-btn" onclick="openAgentModal(\''+ag.id+'\')">Edit Agent</button>';
+}
+
+function setActiveAgent(id,fromServer){
+  activeAgentId=id;const ag=allAgents.find(a=>a.id===id);
+  const pill=document.getElementById('agentPill');
+  const nameEl=document.getElementById('agentPillName');
+  if(ag){
+    nameEl.textContent=ag.name;
+    const c1=ag.vibe_c1||'#a1a1aa',c2=ag.vibe_c2||'#71717a';
+    const fx=agentEffectColor(ag,c1);
+    pill.querySelector('.ap-dot').style.background=c1;
+    voiceAgent.orb.setColors(hexToRgb(c1),hexToRgb(c2));
+    voiceAgent.orb.setEffectColor(hexToRgb(fx));
+    document.getElementById('agentBg').style.cssText='opacity:.6;background:radial-gradient(ellipse at 50% 60%,'+c1+'0a 0%,'+c2+'05 40%,transparent 70%)';
+  }else{
+    nameEl.textContent='No Agent Selected';
+    pill.querySelector('.ap-dot').style.background='var(--text3)';
+    voiceAgent.orb.setColors('161,161,170','113,113,122');
+    voiceAgent.orb.setEffectColor('161,161,170');
+    document.getElementById('agentBg').style.opacity='0';
+  }
+  renderAgentInfo();
+  renderAgents();
+  renderAgentDropdown();
+}
+
+// Agent dropdown logic
+let agentDDOpen=false;
+function toggleAgentDD(forceClose){
+  const dd=document.getElementById('agentDD');
+  const wrap=document.getElementById('agentPillWrap');
+  if(forceClose||agentDDOpen){
+    dd.classList.remove('open');wrap.classList.remove('open');agentDDOpen=false;
+    document.getElementById('agentDDSearch').value='';
+    document.getElementById('agentTooltip').classList.remove('show');
+    filterAgentDD('');
+  }else{
+    dd.classList.add('open');wrap.classList.add('open');agentDDOpen=true;
+    renderAgentDropdown();
+    setTimeout(()=>document.getElementById('agentDDSearch').focus(),50);
+  }
+}
+document.getElementById('agentPill').addEventListener('click',e=>{e.stopPropagation();toggleAgentDD()});
+document.addEventListener('click',e=>{if(agentDDOpen&&!document.getElementById('agentDD').contains(e.target)&&!document.getElementById('agentPill').contains(e.target))toggleAgentDD(true)});
+document.getElementById('agentDDSearch').addEventListener('input',e=>filterAgentDD(e.target.value));
+document.getElementById('agentDDSearch').addEventListener('click',e=>e.stopPropagation());
+
+function filterAgentDD(q){
+  const items=document.querySelectorAll('.ad-item');
+  const lq=q.toLowerCase();
+  items.forEach(el=>{el.style.display=el.dataset.name.toLowerCase().includes(lq)?'':'none'});
+}
+
+function renderAgentDropdown(){
+  const list=document.getElementById('agentDDList');
+  if(!allAgents.length){list.innerHTML='<div style="padding:20px;text-align:center;color:var(--text4);font-size:12px">No agents yet</div>';return}
+  const VOICE_LABELS={alloy:'Alloy',echo:'Echo',fable:'Fable',onyx:'Onyx',nova:'Nova',shimmer:'Shimmer'};
+  const LANG_LABELS={en:'English',hi:'Hindi',es:'Spanish',fr:'French',de:'German',ja:'Japanese',zh:'Chinese',as:'Assamese',bn:'Bengali',brx:'Bodo',doi:'Dogri',gu:'Gujarati',kn:'Kannada',kok:'Konkani',ks:'Kashmiri',mai:'Maithili',ml:'Malayalam',mni:'Manipuri',mr:'Marathi',ne:'Nepali',or:'Odia',pa:'Punjabi',sa:'Sanskrit',sat:'Santali',sd:'Sindhi',ta:'Tamil',te:'Telugu',ur:'Urdu'};
+  list.innerHTML=allAgents.map(a=>{
+    const c1=a.vibe_c1||'#a1a1aa',c2=a.vibe_c2||'#71717a';
+    const isActive=a.id===activeAgentId;
+    const desc=(a.instructions||'No instructions set').substring(0,60);
+    return '<div class="ad-item'+(isActive?' active':'')+'" data-agent-id="'+a.id+'" data-name="'+a.name+'">' +
+      '<div class="ad-aura"><canvas width="64" height="64" data-c1="'+c1+'" data-c2="'+c2+'"></canvas></div>' +
+      '<div class="ad-info"><div class="ad-name">'+a.name+'</div><div class="ad-desc">'+desc+'</div></div>' +
+      '<svg class="ad-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>' +
+    '</div>';
+  }).join('');
+  // Animate mini aura orbs
+  list.querySelectorAll('.ad-aura canvas').forEach(cv=>drawMiniAura(cv,cv.dataset.c1,cv.dataset.c2));
+  // Tooltip portal on hover
+  const tooltip=document.getElementById('agentTooltip');
+  list.querySelectorAll('.ad-item').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{
+      const a=allAgents.find(x=>x.id===el.dataset.agentId);if(!a)return;
+      const VOICE_LABELS={alloy:'Alloy',echo:'Echo',fable:'Fable',onyx:'Onyx',nova:'Nova',shimmer:'Shimmer'};
+      const LANG_LABELS={en:'English',hi:'Hindi',es:'Spanish',fr:'French',de:'German',ja:'Japanese',zh:'Chinese',as:'Assamese',bn:'Bengali',brx:'Bodo',doi:'Dogri',gu:'Gujarati',kn:'Kannada',kok:'Konkani',ks:'Kashmiri',mai:'Maithili',ml:'Malayalam',mni:'Manipuri',mr:'Marathi',ne:'Nepali',or:'Odia',pa:'Punjabi',sa:'Sanskrit',sat:'Santali',sd:'Sindhi',ta:'Tamil',te:'Telugu',ur:'Urdu'};
+      const c1=a.vibe_c1||'#a1a1aa';
+      const toolNames=(a.tool_ids||[]).map(tid=>{const t=allTools.find(x=>x.id===tid);return t?t.name:''}).filter(Boolean);
+      const voice=VOICE_LABELS[a.voice||'alloy']||a.voice||'Alloy';
+      const lang=LANG_LABELS[a.language||'en']||a.language||'English';
+      const speed=a.speed||1.0;
+      tooltip.innerHTML=
+        '<div class="adt-header"><div class="adt-dot" style="background:'+c1+'"></div><div class="adt-title">'+a.name+'</div></div>' +
+        '<div class="adt-section"><div class="adt-label">Instructions</div><div class="adt-val mono">'+(a.instructions||'None')+'</div></div>' +
+        (toolNames.length?'<div class="adt-section"><div class="adt-label">Tools</div><div class="adt-tags">'+toolNames.map(n=>'<span class="adt-tag">'+n+'</span>').join('')+'</div></div>':'') +
+        '<div class="adt-row">' +
+          '<div class="adt-section"><div class="adt-label">Voice</div><div class="adt-val">'+voice+'</div></div>' +
+          '<div class="adt-section"><div class="adt-label">Language</div><div class="adt-val">'+lang+'</div></div>' +
+          '<div class="adt-section"><div class="adt-label">Speed</div><div class="adt-val">'+speed+'x</div></div>' +
+        '</div>';
+      // Position: to the right of the dropdown, or left if no space
+      const ddRect=document.getElementById('agentDD').getBoundingClientRect();
+      const elRect=el.getBoundingClientRect();
+      const ttW=272; // 260+padding
+      const spaceRight=window.innerWidth-(ddRect.right+12);
+      if(spaceRight>=ttW){
+        tooltip.style.left=(ddRect.right+8)+'px';
+      } else {
+        tooltip.style.left=(ddRect.left-ttW-8)+'px';
+      }
+      // Vertically align with the hovered item
+      let top=elRect.top+elRect.height/2-tooltip.offsetHeight/2;
+      top=Math.max(8,Math.min(window.innerHeight-280,top));
+      tooltip.style.top=top+'px';
+      tooltip.classList.add('show');
+    });
+    el.addEventListener('mouseleave',()=>{tooltip.classList.remove('show')});
+    // Click to switch
+    el.addEventListener('click',e=>{
+      e.stopPropagation();
+      tooltip.classList.remove('show');
+      const id=el.dataset.agentId;
+      if(id!==activeAgentId){
+        setActiveAgent(id);
+        if(voiceAgent.ws?.readyState===1&&voiceAgent.state!=='idle')
+          voiceAgent.ws.send(JSON.stringify({action:'switch_agent',agent_id:id}));
+      }
+      toggleAgentDD(true);
+    });
+  });
+}
+
+// Mini aura orb animation for carousel items
+const miniAuraAnimations=new Map();
+function drawMiniAura(canvas,c1Hex,c2Hex){
+  const ctx=canvas.getContext('2d');
+  const w=canvas.width,h=canvas.height,cx=w/2,cy=h/2;
+  const rgb1=hexToRgb(c1Hex),rgb2=hexToRgb(c2Hex);
+  let phase=Math.random()*Math.PI*2;
+  function frame(){
+    phase+=0.03;
+    ctx.clearRect(0,0,w,h);
+    // Outer glow
+    const g1=ctx.createRadialGradient(cx,cy,0,cx,cy,w*.48);
+    g1.addColorStop(0,'rgba('+rgb1+',0.5)');
+    g1.addColorStop(0.4,'rgba('+rgb2+',0.3)');
+    g1.addColorStop(1,'rgba('+rgb2+',0)');
+    ctx.fillStyle=g1;ctx.fillRect(0,0,w,h);
+    // Inner breathing orb
+    const breathe=0.25+Math.sin(phase)*0.06;
+    const r=w*breathe;
+    const g2=ctx.createRadialGradient(cx+Math.sin(phase*0.7)*3,cy+Math.cos(phase*0.9)*3,0,cx,cy,r);
+    g2.addColorStop(0,'rgba('+rgb1+',0.8)');
+    g2.addColorStop(0.6,'rgba('+rgb2+',0.4)');
+    g2.addColorStop(1,'rgba('+rgb2+',0)');
+    ctx.fillStyle=g2;
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill();
+    // Shimmer highlight
+    const shimX=cx+Math.sin(phase*1.3)*6,shimY=cy+Math.cos(phase*1.1)*6;
+    const g3=ctx.createRadialGradient(shimX,shimY,0,shimX,shimY,r*0.5);
+    g3.addColorStop(0,'rgba(255,255,255,0.15)');
+    g3.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=g3;
+    ctx.beginPath();ctx.arc(shimX,shimY,r*0.5,0,Math.PI*2);ctx.fill();
+    const animId=requestAnimationFrame(frame);
+    miniAuraAnimations.set(canvas,animId);
+  }
+  // Cancel previous animation if any
+  if(miniAuraAnimations.has(canvas))cancelAnimationFrame(miniAuraAnimations.get(canvas));
+  frame();
+}
+
+async function loadAgents(){
+  try{const r=await fetch(API+'/api/agents');const j=await r.json();allAgents=j.agents||[];
+    if(!activeAgentId&&allAgents.length)setActiveAgent(allAgents[0].id);else{renderAgents();renderAgentDropdown()}
+  }catch(e){}}
+
+function renderAgents(){
+  const el=document.getElementById('agentsGrid');
+  if(!allAgents.length){el.innerHTML='<div class="empty" style="grid-column:1/-1;padding:60px">No agents yet. Create your first agent to get started.</div>';return}
+  el.innerHTML=allAgents.map(a=>{
+    const isActive=a.id===activeAgentId;
+    const c1=a.vibe_c1||'#a1a1aa',c2=a.vibe_c2||'#71717a';
+    const toolNames=(a.tool_ids||[]).map(tid=>{const t=allTools.find(x=>x.id===tid);return t?t.name:null}).filter(Boolean);
+    const docCount=(a.document_scopes||[]).length;
+    return '<div class="ag-card '+(isActive?'active':'')+'" onclick="setActiveAgentClick(\''+a.id+'\')">'
+      +'<div class="ag-vibe" style="background:linear-gradient(90deg,'+c1+','+c2+')"></div>'
+      +'<div class="ag-body">'
+      +'<div class="ag-top"><span class="ag-name">'+(isActive?'<span class="ag-active-dot"></span>':'')+a.name+'</span>'
+      +'<div class="ag-actions">'
+      +'<button class="ag-btn" onclick="event.stopPropagation();openAgentModal(\''+a.id+'\')" title="Edit">✎</button>'
+      +'<button class="ag-btn" onclick="event.stopPropagation();deleteAgent(\''+a.id+'\')" title="Delete">✕</button>'
+      +'</div></div>'
+      +'<div class="ag-desc">'+(a.instructions||'No instructions configured')+'</div>'
+      +'<div class="ag-tags">'
+      +toolNames.map(n=>'<span class="ag-tag">⚡ '+n+'</span>').join('')
+      +'<span class="ag-tag">Docs: '+(docCount||'all')+'</span>'
+      +'<span class="ag-tag">'+({alloy:'Alloy',nova:'Nova',shimmer:'Shimmer',echo:'Echo',onyx:'Onyx',fable:'Fable'}[a.voice]||a.voice||'Alloy')+'</span>'
+      +'<span class="ag-tag">'+({en:'English',es:'Spanish',fr:'French',hi:'Hindi',ja:'Japanese',zh:'Chinese',de:'German',as:'Assamese',bn:'Bengali',brx:'Bodo',doi:'Dogri',gu:'Gujarati',kn:'Kannada',kok:'Konkani',ks:'Kashmiri',mai:'Maithili',ml:'Malayalam',mni:'Manipuri',mr:'Marathi',ne:'Nepali',or:'Odia',pa:'Punjabi',sa:'Sanskrit',sat:'Santali',sd:'Sindhi',ta:'Tamil',te:'Telugu',ur:'Urdu'}[a.language]||a.language||'en')+'</span>'
+      +'</div></div></div>'
+  }).join('');
+}
+
+function setActiveAgentClick(id){
+  setActiveAgent(id);
+  if(voiceAgent.ws?.readyState===1&&voiceAgent.state!=='idle')
+    voiceAgent.ws.send(JSON.stringify({action:'switch_agent',agent_id:id}));
+}
+
+async function deleteAgent(id){
+  if(!confirm('Delete this agent?'))return;
+  await fetch(API+'/api/agents/'+id,{method:'DELETE'});
+  if(activeAgentId===id)activeAgentId=null;
+  await loadAgents();toast('Agent deleted','success');
+}
+
+function openAgentModal(editId){
+  const ag=editId?allAgents.find(a=>a.id===editId):null;
+  const isEdit=!!ag;
+  let selectedToolIds=ag?[...(ag.tool_ids||[])]:[];
+  let selectedDocScopes=normalizeDocScopeSelections(ag?[...(ag.document_scopes||[])]:[]);
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML='<div class="modal" style="width:640px;max-width:calc(100vw - 32px)">'
+    +'<h3>'+(isEdit?'Edit':'New')+' Agent</h3>'
+    +'<div class="mf"><label>Name</label>'
+    +'<input type="text" id="agName" placeholder="e.g. Sales Assistant" value="'+(ag?ag.name:'')+'"></div>'
+    +'<div class="mf"><label>Instructions</label>'
+    +'<textarea id="agInstructions" rows="3" placeholder="Define the agent\'s role, personality, and behavior…" style="min-height:72px">'+(ag?ag.instructions:'')+'</textarea>'
+    +'<div class="hint">Defines how the agent behaves and responds.</div></div>'
+    +'<div class="mf"><label>Vibe</label>'
+    +'<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
+    +'<div class="vibe-presets" id="vibePresets" style="margin-bottom:0"></div>'
+    +'<input type="color" id="vibeC1" value="'+(ag&&ag.vibe_c1?ag.vibe_c1:'#a1a1aa')+'" style="width:28px;height:24px;border:1px solid var(--border);border-radius:4px;background:var(--bg);cursor:pointer;padding:1px">'
+    +'<input type="color" id="vibeC2" value="'+(ag&&ag.vibe_c2?ag.vibe_c2:'#71717a')+'" style="width:28px;height:24px;border:1px solid var(--border);border-radius:4px;background:var(--bg);cursor:pointer;padding:1px">'
+    +'</div></div>'
+    +'<div class="mf"><label>Effects Color</label>'
+    +'<div style="display:flex;align-items:center;gap:10px"><input type="color" id="effectColor" value="'+agentEffectColor(ag,ag&&ag.vibe_c1?ag.vibe_c1:'#a1a1aa')+'" style="width:36px;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--bg);cursor:pointer;padding:2px">'
+    +'<div class="hint" style="margin-top:0">Controls particle effects, orbit sparks, waves, bursts, and asteroid highlights.</div></div></div>'
+    +'<div class="mf"><label>APIs</label>'
+    +'<div class="chip-select"><div class="chip-box" id="chipBox"><input type="text" id="chipInput" placeholder="Search APIs…"></div>'
+    +'<div class="chip-dd" id="chipDD"></div></div>'
+    +'<div class="hint" style="margin-top:5px">switch_agent is always included.</div></div>'
+    +'<div class="mf"><label>Documents</label>'
+    +'<div class="doc-scope-picker" id="docScopeBox">'
+    +'<div class="doc-scope-top"><input class="doc-scope-search" id="docScopeSearch" type="search" placeholder="Search folders or files"><button class="doc-scope-clear" id="docScopeClear" type="button">Clear</button></div>'
+    +'<div class="doc-scope-selected" id="docScopeSelected"></div><div class="doc-scope-tree" id="docScopeTree"></div></div>'
+    +'<div class="hint" style="margin-top:5px">Leave empty to use all uploaded documents. Select folders or files to narrow this agent\'s RAG context.</div></div>'
+    +'<div class="mf"><label>Voice</label>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<select id="agLang">'
+    +'<option value="en">English</option><option value="es">Spanish</option><option value="fr">French</option>'
+    +'<option value="hi">Hindi</option><option value="ja">Japanese</option><option value="zh">Chinese</option>'
+    +'<option value="as">Assamese</option><option value="bn">Bengali</option><option value="brx">Bodo</option>'
+    +'<option value="doi">Dogri</option><option value="gu">Gujarati</option><option value="kn">Kannada</option>'
+    +'<option value="kok">Konkani</option><option value="ks">Kashmiri</option><option value="mai">Maithili</option>'
+    +'<option value="ml">Malayalam</option><option value="mni">Manipuri</option><option value="mr">Marathi</option>'
+    +'<option value="ne">Nepali</option><option value="or">Odia</option><option value="pa">Punjabi</option>'
+    +'<option value="sa">Sanskrit</option><option value="sat">Santali</option><option value="sd">Sindhi</option>'
+    +'<option value="ta">Tamil</option><option value="te">Telugu</option><option value="ur">Urdu</option></select>'
+    +'<select id="agVoice">'
+    +'<option value="alloy">Alloy</option><option value="nova">Nova</option><option value="shimmer">Shimmer</option>'
+    +'<option value="echo">Echo</option><option value="onyx">Onyx</option><option value="fable">Fable</option></select>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-top:8px">'
+    +'<span style="font-size:11px;color:var(--text3);white-space:nowrap">Speed <span id="agSpeedVal">'+(ag?ag.speed:1)+'x</span></span>'
+    +'<input type="range" id="agSpeed" min="0.5" max="2" step="0.1" value="'+(ag?ag.speed:1)+'" style="flex:1">'
+    +'</div></div>'
+    +'<div class="modal-actions">'
+    +(isEdit?'<button class="mbtn danger" id="btnDelAgent">Delete</button>':'')
+    +'<button class="mbtn secondary" id="btnCancelAgent">Cancel</button>'
+    +'<button class="mbtn primary" id="btnSaveAgent">'+(isEdit?'Save':'Create')+'</button></div></div>';
+  document.body.appendChild(ov);
+  // Vibe presets
+  const presetsEl=ov.querySelector('#vibePresets');
+  VIBES.forEach(p=>{const btn=document.createElement('button');
+    btn.style.background='linear-gradient(135deg,'+p.c1+','+p.c2+')';btn.title=p.name;
+    btn.onclick=()=>{ov.querySelector('#vibeC1').value=p.c1;ov.querySelector('#vibeC2').value=p.c2;ov.querySelector('#effectColor').value=p.c1};
+    presetsEl.appendChild(btn)});
+  // Chip-based API selector
+  const chipBox=ov.querySelector('#chipBox'),chipInput=ov.querySelector('#chipInput'),chipDD=ov.querySelector('#chipDD');
+  function renderChips(){
+    chipBox.querySelectorAll('.api-chip').forEach(c=>c.remove());
+    selectedToolIds.forEach(tid=>{
+      const tool=allTools.find(t=>t.id===tid);if(!tool)return;
+      const chip=document.createElement('span');chip.className='api-chip';
+      chip.innerHTML='<span class="ctype '+tool.mode+'">'+tool.mode+'</span>'+tool.name+'<span class="cx" data-tid="'+tid+'">×</span>';
+      chipBox.insertBefore(chip,chipInput);
+      chip.querySelector('.cx').onclick=e=>{e.stopPropagation();selectedToolIds=selectedToolIds.filter(i=>i!==tid);renderChips();filterDD(chipInput.value)};
+    });
+  }
+  function filterDD(q){
+    const lq=q.toLowerCase();
+    const avail=allTools.filter(t=>!selectedToolIds.includes(t.id)&&(t.name.toLowerCase().includes(lq)||t.description.toLowerCase().includes(lq)));
+    if(!avail.length){chipDD.innerHTML='<div class="chip-dd-empty">'+(allTools.length?'No matching APIs':'No APIs in library yet')+'</div>'}
+    else{chipDD.innerHTML=avail.map(t=>'<div class="chip-dd-item" data-tid="'+t.id+'">'
+      +'<span class="cdi-type '+t.mode+'">'+t.mode+'</span><span class="cdi-name">'+t.name+'</span>'
+      +'<span class="cdi-desc">'+t.description.substring(0,40)+'</span></div>').join('');
+      chipDD.querySelectorAll('.chip-dd-item').forEach(el=>{el.onclick=()=>{
+        selectedToolIds.push(el.dataset.tid);chipInput.value='';renderChips();filterDD('')}})};
+  }
+  chipInput.addEventListener('focus',()=>{chipDD.classList.add('open');filterDD(chipInput.value)});
+  chipInput.addEventListener('input',()=>filterDD(chipInput.value));
+  chipBox.addEventListener('click',()=>chipInput.focus());
+  const closeDD=e=>{if(!ov.querySelector('.chip-select').contains(e.target))chipDD.classList.remove('open')};
+  document.addEventListener('click',closeDD);
+  renderChips();filterDD('');
+  const docScopeBox=ov.querySelector('#docScopeBox'),docScopeSearch=ov.querySelector('#docScopeSearch'),docScopeClear=ov.querySelector('#docScopeClear'),docScopeSelected=ov.querySelector('#docScopeSelected'),docScopeTree=ov.querySelector('#docScopeTree');
+  const expandedDocFolders=new Set(['']);
+  const scopeTree=()=>((docTree&&((docTree.children||[]).length||(docTree.files||[]).length))?docTree:buildDocTreeFromList(allDocs));
+  const collectFolders=(node,out=[])=>{(node.children||[]).forEach(child=>{out.push(child);collectFolders(child,out)});return out};
+  const selectedText=()=>selectedDocScopes.length?selectedDocScopes.map(scopeLabel).filter(Boolean).join(' · '):'All uploaded documents';
+  const searchText=text=>String(text||'').toLowerCase().replace(/[^a-z0-9\u0900-\u0d7f]+/g,' ').trim();
+  const matchesDocQuery=(text,query)=>query.split(/\s+/).filter(Boolean).every(part=>searchText(text).includes(part));
+  function toggleDocScope(item,checked){
+    const key=scopeKey(item);selectedDocScopes=selectedDocScopes.filter(scope=>scopeKey(scope)!==key);
+    if(checked){
+      if(item.type==='folder'){
+        const path=normDocPath(item.value);
+        selectedDocScopes=selectedDocScopes.filter(scope=>!(scope.type==='folder'&&normDocPath(scope.value).startsWith(path+'/')));
+      }
+      selectedDocScopes.push(item);
+    }
+  }
+  function folderRow(node,depth,searchMode){
+    const counts=docNodeCounts(node),hasKids=(node.children||[]).length||(node.files||[]).length,expanded=expandedDocFolders.has(node.path),selected=new Set(selectedDocScopes.map(scopeKey));
+    const label=searchMode?node.path:node.name;
+    return '<div class="doc-tree-row folder" style="--depth:'+depth+'" data-path="'+escapeHtml(node.path)+'">'
+      +(hasKids&&!searchMode?'<button type="button" class="doc-tree-toggle" data-path="'+escapeHtml(node.path)+'">'+(expanded?'v':'>')+'</button>':'<button type="button" class="doc-tree-toggle placeholder"> </button>')
+      +'<input type="checkbox" data-type="folder" data-value="'+escapeHtml(node.path)+'" '+(selected.has(scopeKey({type:'folder',value:node.path}))?'checked':'')+'>'
+      +'<div class="doc-tree-name" title="'+escapeHtml(node.path)+'">'+escapeHtml(label)+'/</div>'
+      +'<div class="doc-tree-count">'+counts.files+' files</div></div>';
+  }
+  function fileRow(doc,depth,searchMode){
+    const selected=new Set(selectedDocScopes.map(scopeKey));
+    const rel=doc.relative_path||doc.filename||'',name=searchMode?rel:(doc.filename||rel.split('/').pop());
+    return '<div class="doc-tree-row file" style="--depth:'+depth+'">'
+      +'<button type="button" class="doc-tree-toggle placeholder"> </button>'
+      +'<input type="checkbox" data-type="file" data-value="'+escapeHtml(doc.id)+'" '+(selected.has(scopeKey({type:'file',value:doc.id}))?'checked':'')+'>'
+      +'<div class="doc-tree-name" title="'+escapeHtml(rel)+'">'+escapeHtml(name)+'</div>'
+      +'<div class="doc-tree-count">file</div></div>';
+  }
+  function renderNode(node,depth){
+    let html='';
+    (node.children||[]).forEach(child=>{html+=folderRow(child,depth,false);if(expandedDocFolders.has(child.path))html+=renderNode(child,depth+1)});
+    (node.files||[]).forEach(doc=>{html+=fileRow(doc,depth,false)});
+    return html;
+  }
+  function renderDocScopeBox(){
+    const tree=scopeTree();
+    if(!allDocs.length){docScopeTree.innerHTML='<div class="doc-tree-empty">No documents uploaded yet</div>';docScopeSelected.textContent='No documents available';return}
+    const q=searchText(docScopeSearch.value);
+    docScopeSelected.textContent=selectedDocScopes.length+' selected · '+selectedText();
+    if(q){
+      const folders=collectFolders(tree).filter(node=>matchesDocQuery(node.path,q));
+      const files=allDocs.filter(doc=>matchesDocQuery(doc.relative_path||doc.filename,q));
+      docScopeTree.innerHTML=folders.map(node=>folderRow(node,0,true)).join('')+files.map(doc=>fileRow(doc,0,true)).join('')||'<div class="doc-tree-empty">No matching documents</div>';
+    }else{
+      docScopeTree.innerHTML=renderNode(tree,0)||'<div class="doc-tree-empty">No documents uploaded yet</div>';
+    }
+    docScopeTree.querySelectorAll('.doc-tree-toggle:not(.placeholder)').forEach(btn=>{btn.onclick=e=>{e.preventDefault();const path=btn.dataset.path;if(expandedDocFolders.has(path))expandedDocFolders.delete(path);else expandedDocFolders.add(path);renderDocScopeBox()}});
+    docScopeTree.querySelectorAll('input[type="checkbox"]').forEach(cb=>{cb.onchange=()=>{toggleDocScope({type:cb.dataset.type,value:cb.dataset.value},cb.checked);renderDocScopeBox()}});
+  }
+  docScopeSearch.oninput=renderDocScopeBox;
+  docScopeClear.onclick=()=>{selectedDocScopes=[];docScopeSearch.value='';renderDocScopeBox()};
+  renderDocScopeBox();
+  if(ag){ov.querySelector('#agLang').value=ag.language||'en';ov.querySelector('#agVoice').value=ag.voice||'alloy'}
+  ov.querySelector('#agSpeed').oninput=e=>{ov.querySelector('#agSpeedVal').textContent=parseFloat(e.target.value).toFixed(1)+'x'};
+  ov.querySelector('#btnCancelAgent').onclick=()=>{document.removeEventListener('click',closeDD);ov.remove()};
+  ov.onclick=e=>{if(e.target===ov){document.removeEventListener('click',closeDD);ov.remove()}};
+  if(isEdit&&ov.querySelector('#btnDelAgent'))ov.querySelector('#btnDelAgent').onclick=async()=>{document.removeEventListener('click',closeDD);await deleteAgent(ag.id);ov.remove()};
+  ov.querySelector('#btnSaveAgent').onclick=async()=>{
+    const name=ov.querySelector('#agName').value.trim();if(!name){toast('Name required','error');return}
+    const data={name,instructions:ov.querySelector('#agInstructions').value.trim(),
+      tool_ids:selectedToolIds,language:ov.querySelector('#agLang').value,
+      voice:ov.querySelector('#agVoice').value,speed:parseFloat(ov.querySelector('#agSpeed').value),
+      vibe_c1:ov.querySelector('#vibeC1').value,vibe_c2:ov.querySelector('#vibeC2').value,
+      effect_color:ov.querySelector('#effectColor').value,
+      document_scopes:selectedDocScopes};
+    try{const method=isEdit?'PUT':'POST';const url=isEdit?API+'/api/agents/'+ag.id:API+'/api/agents';
+      const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      if(r.ok){const j=await r.json();toast('Agent '+(isEdit?'updated':'created'),'success');document.removeEventListener('click',closeDD);ov.remove();await loadAgents();
+        if(!activeAgentId&&j.agent)setActiveAgent(j.agent.id);else if(isEdit&&ag.id===activeAgentId)setActiveAgent(ag.id)}
+      else toast('Failed','error')}catch(e){toast('Error','error')}};
+}
+
+/* ── API Library ─────────────────────────────────────────── */
+function openApiModal(editApi){
+  if(editApi&&editApi.mode==='handoff'){toast('Human handoff is built in','success');return}
+  const isEdit=!!editApi;const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML='<div class="modal"><h3>'+(isEdit?'Edit':'Add')+' API</h3>'
+    +'<div class="mode-toggle" id="modeToggle">'
+    +'<button class="'+((!isEdit||editApi.mode==='mock')?'active':'')+'" data-mode="mock">Mock</button>'
+    +'<button class="'+((editApi&&editApi.mode==='realtime')?'active':'')+'" data-mode="realtime">Realtime</button></div>'
+    +'<div id="mockSection" style="display:'+((!isEdit||editApi.mode==='mock')?'block':'none')+'">'
+    +'<div class="mf"><label>Name</label><input type="text" id="apiName" placeholder="get_customer_info" value="'+(editApi?editApi.name:'')+'"><div class="hint">Use snake_case</div></div>'
+    +'<div class="mf"><label>Description</label><textarea id="apiDesc" placeholder="What this API does">'+(editApi?editApi.description:'')+'</textarea></div>'
+    +'<div class="mf"><label>Parameters</label><div class="fields-list" id="fieldsList"></div>'
+    +'<button class="add-field-btn" id="btnAddField">+ Add Parameter</button></div>'
+    +'<div class="mf"><label>Sample Output</label>'
+    +'<textarea id="apiSampleOutput" rows="3" placeholder=\'{"status":"success"}\'>'+(editApi?editApi.sample_output||'':'')+'</textarea>'
+    +'<div class="hint">Returned when this mock is called</div></div></div>'
+    +'<div id="realtimeSection" style="display:'+((editApi&&editApi.mode==='realtime')?'block':'none')+'">'
+    +'<div class="mf"><label>cURL</label>'
+    +'<textarea id="curlInput" rows="3" placeholder="curl -X POST https://...">'+(editApi?editApi.curl||'':'')+'</textarea>'
+    +'<button class="curl-parse-btn" id="btnParseCurl">Parse</button><div id="parsedResult"></div></div>'
+    +'<div class="mf"><label>Name</label><input type="text" id="apiNameRT" value="'+(editApi?editApi.name:'')+'"></div>'
+    +'<div class="mf"><label>Description</label><textarea id="apiDescRT">'+(editApi?editApi.description:'')+'</textarea></div>'
+    +'<div class="mf"><label>Parameters</label><div class="fields-list" id="fieldsListRT"></div>'
+    +'<button class="add-field-btn" id="btnAddFieldRT">+ Add Parameter</button></div></div>'
+    +'<div class="modal-actions"><button class="mbtn secondary" id="btnCancelApi">Cancel</button>'
+    +'<button class="mbtn primary" id="btnSaveApi">'+(isEdit?'Save':'Add')+'</button></div></div>';
+  document.body.appendChild(ov);
+  const mode=(editApi&&editApi.mode==='realtime')?'realtime':'mock';
+  const fc=mode==='mock'?'fieldsList':'fieldsListRT';
+  if(editApi&&editApi.fields)editApi.fields.forEach(f=>addFieldRow(ov.querySelector('#'+fc),f.name,f.type,f.required,f.description));
+  ov.querySelectorAll('#modeToggle button').forEach(b=>{b.onclick=()=>{
+    ov.querySelectorAll('#modeToggle button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+    ov.querySelector('#mockSection').style.display=b.dataset.mode==='mock'?'block':'none';
+    ov.querySelector('#realtimeSection').style.display=b.dataset.mode==='realtime'?'block':'none'}});
+  ov.querySelector('#btnAddField').onclick=()=>addFieldRow(ov.querySelector('#fieldsList'));
+  ov.querySelector('#btnAddFieldRT').onclick=()=>addFieldRow(ov.querySelector('#fieldsListRT'));
+  ov.querySelector('#btnParseCurl').onclick=()=>{
+    const curl=ov.querySelector('#curlInput').value.trim();if(!curl){toast('Paste cURL','error');return}
+    try{const p=parseCurl(curl);
+      ov.querySelector('#parsedResult').innerHTML='<div class="parsed-info">'+p.method+' '+p.url+' — '+p.fields.length+' params</div>';
+      let path;try{path=new URL(p.url).pathname.split('/').filter(Boolean).pop()||'api'}catch(e2){path='api'}
+      ov.querySelector('#apiNameRT').value=ov.querySelector('#apiNameRT').value||path.replace(/[^a-zA-Z0-9]/g,'_');
+      const fl=ov.querySelector('#fieldsListRT');fl.innerHTML='';
+      p.fields.forEach(f=>addFieldRow(fl,f.name,f.type,true,''));
+    }catch(e){ov.querySelector('#parsedResult').innerHTML='<div style="color:var(--red);font-size:11px;margin-top:6px">'+e.message+'</div>'}};
+  ov.querySelector('#btnCancelApi').onclick=()=>ov.remove();
+  ov.onclick=e=>{if(e.target===ov)ov.remove()};
+  ov.querySelector('#btnSaveApi').onclick=async()=>{
+    const am=ov.querySelector('#modeToggle button.active').dataset.mode;
+    const name=am==='mock'?ov.querySelector('#apiName').value.trim():ov.querySelector('#apiNameRT').value.trim();
+    const desc=am==='mock'?ov.querySelector('#apiDesc').value.trim():ov.querySelector('#apiDescRT').value.trim();
+    if(!name){toast('Name required','error');return}if(!desc){toast('Description required','error');return}
+    const fc2=am==='mock'?ov.querySelector('#fieldsList'):ov.querySelector('#fieldsListRT');
+    const fields=[];fc2.querySelectorAll('.field-row').forEach(row=>{
+      const ins=row.querySelectorAll('input,select');const fn=ins[0]?ins[0].value.trim():'';
+      if(fn)fields.push({name:fn,type:ins[1]?ins[1].value:'string',required:ins[2]?ins[2].checked:true,description:ins[3]?ins[3].value.trim():''})});
+    const data={name,description:desc,mode:am,fields,
+      curl:am==='realtime'?ov.querySelector('#curlInput').value.trim():undefined,
+      sample_output:am==='mock'?ov.querySelector('#apiSampleOutput').value.trim():undefined};
+    if(editApi&&editApi.id)data.id=editApi.id;
+    try{const method=editApi&&editApi.id?'PUT':'POST';const url=editApi&&editApi.id?API+'/api/tools/'+editApi.id:API+'/api/tools';
+      const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+      if(r.ok){toast('API saved','success');ov.remove();refreshApis()}else toast('Error','error')}catch(e){toast('Failed','error')}};
+}
+function addFieldRow(c,name,type,req,desc){
+  name=name||'';type=type||'string';req=req!==false;desc=desc||'';
+  const r=document.createElement('div');r.className='field-row';
+  r.innerHTML='<input type="text" placeholder="name" value="'+name+'" style="flex:1.2">'
+    +'<select style="width:80px;flex-shrink:0;padding:7px 8px;font-size:12px"><option value="string"'+(type==='string'?' selected':'')+'>string</option>'
+    +'<option value="number"'+(type==='number'?' selected':'')+'>number</option>'
+    +'<option value="integer"'+(type==='integer'?' selected':'')+'>integer</option>'
+    +'<option value="boolean"'+(type==='boolean'?' selected':'')+'>boolean</option></select>'
+    +'<input type="checkbox" class="field-req" title="Required"'+(req?' checked':'')+'>'
+    +'<input type="text" placeholder="description" value="'+desc+'" style="flex:2">'
+    +'<button class="rm-field" title="Remove">✕</button>';
+  r.querySelector('.rm-field').onclick=()=>r.remove();c.appendChild(r)}
+function parseCurl(curl){let method='GET',url='',headers={},body=null;
+  curl=curl.replace(/\\\n/g,' ').trim();if(curl.startsWith('curl '))curl=curl.slice(5);
+  let mm=curl.match(/-X\s+(\w+)/);if(mm){method=mm[1].toUpperCase();curl=curl.replace(mm[0],'')}
+  const hr=/-H\s+['"](.*?)['"]/g;let hm;while((hm=hr.exec(curl))!==null){
+    const parts=hm[1].split(':');headers[parts[0].trim()]=parts.slice(1).join(':').trim();curl=curl.replace(hm[0],'')}
+  const dm=curl.match(/(?:-d|--data|--data-raw|--data-binary)\s+['"]?([\s\S]*?)['"]?\s*(?=-|$)/);
+  if(dm){const raw=dm[1].replace(/^['"]|['"]$/g,'');try{body=JSON.parse(raw)}catch(e){body=raw}
+    if(!mm)method='POST';curl=curl.replace(dm[0],'')}
+  const um=curl.match(/(https?:\/\/[^\s'"]+)/);if(um)url=um[1].replace(/['"]/g,'');
+  if(!url)throw new Error('No URL found');const fields=[];
+  if(body&&typeof body==='object')for(const bk in body){
+    const bv=body[bk];let t='string';if(typeof bv==='number')t=Number.isInteger(bv)?'integer':'number';
+    else if(typeof bv==='boolean')t='boolean';fields.push({name:bk,type:t})}
+  try{const u=new URL(url);for(const pair of u.searchParams)fields.push({name:pair[0],type:'string'})}catch(e){}
+  return{method,url,headers,body,fields}}
+
+/* ── Data refresh ────────────────────────────────────────── */
+async function refreshDocs(){try{
+  const [docRes,treeRes]=await Promise.all([fetch(API+'/api/documents'),fetch(API+'/api/documents/tree')]);
+  const docJson=await docRes.json();allDocs=docJson.documents||[];
+  if(treeRes.ok){const treeJson=await treeRes.json();docTree=treeJson.tree||null;allCollections=treeJson.collections||[]}
+  if(currentDocPath&&!findDocNode(currentDocPath))currentDocPath='';
+  renderDocsAV();renderAgentInfo();renderAgents()
+}catch(e){}}
+async function deleteDocs(id){if(!confirm('Delete this document from the database?'))return;await fetch(API+'/api/documents/'+id,{method:'DELETE'});refreshDocs()}
+async function refreshApis(){try{const r=await fetch(API+'/api/tools');const j=await r.json();allTools=j.tools||[];renderApisAV();renderAgentInfo();renderAgents()}catch(e){}}
+function renderApisAV(){
+  const el=document.getElementById('apisGridAV');if(!el)return;
+  if(!allTools.length){el.innerHTML='<div class="empty" style="grid-column:1/-1;padding:40px">No APIs configured yet. Add your first API.</div>';return}
+  el.innerHTML=allTools.map(a=>{const builtIn=a.mode==='handoff';return '<div class="av-api-card">'
+    +'<div class="av-api-hdr"><span class="av-api-name"><span class="api-type '+a.mode+'">'+a.mode+'</span>'+a.name+'</span>'
+    +(builtIn?'<div class="av-api-actions"><span class="av-api-tag">Built in</span></div>':'<div class="av-api-actions">'
+      +'<button class="ag-btn" onclick="editApiClick(\''+a.id+'\')" title="Edit">✎</button>'
+      +'<button class="ag-btn" onclick="deleteApiClick(\''+a.id+'\')" title="Delete">✕</button>'
+      +'</div>')+'</div>'
+    +'<div class="av-api-desc">'+a.description+'</div>'
+    +'<div class="av-api-tags">'+(a.fields||[]).map(f=>'<span class="av-api-tag">'+f.name+(f.required?'*':'')+':'+f.type+'</span>').join('')+'</div>'
+    +'</div>'}).join('')}
+function normDocPath(path){return String(path||'').replace(/^\/+|\/+$/g,'')}
+function jsString(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' ')}
+function findDocNode(path,node){
+  node=node||docTree;path=normDocPath(path);if(!node)return null;if(!path)return node;
+  const parts=path.split('/').filter(Boolean);let cur=node;
+  for(const part of parts){cur=(cur.children||[]).find(c=>c.name===part);if(!cur)return null}
+  return cur;
+}
+function docNodeCounts(node){
+  if(!node)return{folders:0,files:0};
+  let folders=(node.children||[]).length,files=(node.files||[]).length;
+  (node.children||[]).forEach(child=>{const c=docNodeCounts(child);folders+=c.folders;files+=c.files});
+  return{folders,files};
+}
+function docsInFolder(path){path=normDocPath(path);return allDocs.filter(d=>{const rel=normDocPath(d.relative_path||d.filename);return !path||rel===path||rel.startsWith(path+'/')})}
+function folderCollectionId(path){const docs=docsInFolder(path);const ids=[...new Set(docs.map(d=>d.collection_id).filter(Boolean))];if(ids.length!==1)return'';return allDocs.filter(d=>d.collection_id===ids[0]).length===docs.length?ids[0]:''}
+function folderQuestSummary(path){
+  const docs=docsInFolder(path);let done=0,generating=0,pending=0,quests=0,failed=0;
+  docs.forEach(d=>{
+    if(d.status==='failed'){failed++;return;}
+    const st=d.quest_status||'pending';quests+=Number(d.quest_count||0);
+    if(st==='done')done++;else if(st==='generating')generating++;else pending++;
+  });
+  const ready=docs.length-failed;
+  const state=generating?'generating':(ready&&done===ready?'done':'pending');
+  const label='K-Quest '+done+'/'+ready+' docs · '+quests+' q'+(failed?' · '+failed+' failed':'');
+  return{state,label,quests,done,total:docs.length,ready,pending,generating,failed}
+}
+function fileQuestMeta(d){
+  const st=d.quest_status||'pending';const label='K-Quest '+st+' · '+(d.quest_count||0)+' q';
+  return'<span class="doc-kquest '+(st==='done'?'done':st==='generating'?'generating':'')+'">'+escapeHtml(label)+'</span>'
+}
+function buildDocTreeFromList(docs){
+  const root={name:'Documents',path:'',type:'root',children:[],files:[]};
+  docs.forEach(doc=>{
+    const path=normDocPath(doc.relative_path||doc.filename||'document');const parts=path.split('/').filter(Boolean);let node=root;
+    parts.forEach((part,index)=>{
+      if(index===parts.length-1)node.files.push(doc);
+      else{let child=node.children.find(c=>c.name===part);if(!child){child={name:part,path:parts.slice(0,index+1).join('/'),type:'folder',children:[],files:[]};node.children.push(child)}node=child}
+    });
+  });
+  const sortNode=node=>{node.children.sort((a,b)=>a.name.localeCompare(b.name));node.files.sort((a,b)=>(a.relative_path||a.filename||'').localeCompare(b.relative_path||b.filename||''));node.children.forEach(sortNode)};
+  sortNode(root);return root;
+}
+function openDocFolder(path){currentDocPath=normDocPath(path);renderDocsAV()}
+function docBreadcrumbs(){
+  const parts=currentDocPath.split('/').filter(Boolean);const crumbs=['<button class="doc-crumb '+(!parts.length?'current':'')+'" onclick="openDocFolder(\'\')">Documents</button>'];
+  let acc='';parts.forEach((part,index)=>{acc=acc?acc+'/'+part:part;crumbs.push('<button class="doc-crumb '+(index===parts.length-1?'current':'')+'" onclick="openDocFolder(\''+jsString(acc)+'\')">'+escapeHtml(part)+'</button>')});
+  return crumbs.join('');
+}
+function docFileIcon(filename){filename=filename||'';return filename.endsWith('.pdf')?'▤':filename.endsWith('.docx')?'▥':filename.match(/\.csv|\.xlsx|\.xlsm$/)?'▦':'▧'}
+function renderDocsAV(){
+  const el=document.getElementById('docsGridAV');if(!el)return;
+  const tree=(docTree&&((docTree.children||[]).length||(docTree.files||[]).length))?docTree:buildDocTreeFromList(allDocs);
+  const node=findDocNode(currentDocPath,tree)||tree;
+  if(!allDocs.length){el.innerHTML='<div class="empty" style="grid-column:1/-1;padding:20px">No documents uploaded yet.</div>';return}
+  const counts=docNodeCounts(node);
+  const currentSummary=folderQuestSummary(currentDocPath);
+  const deleteCurrent=currentDocPath?'<button class="doc-browser-action" onclick="deleteDocFolder(\''+jsString(currentDocPath)+'\')">Delete Folder</button>':'';
+  const head='<div class="doc-browser-head"><div class="doc-crumbs">'+docBreadcrumbs()+'</div>'
+    +'<div class="doc-browser-right"><span class="doc-kquest '+currentSummary.state+'">'+escapeHtml(currentSummary.label)+'</span>'
+    +'<div class="doc-browser-summary">'+counts.files+' file'+(counts.files===1?'':'s')+' · '+counts.folders+' folder'+(counts.folders===1?'':'s')+'</div>'+deleteCurrent+'</div></div>';
+  const folders=(node.children||[]).map(folder=>{const c=docNodeCounts(folder);const q=folderQuestSummary(folder.path);return '<div class="av-doc-card av-folder-card" onclick="openDocFolder(\''+jsString(folder.path)+'\')">'
+      +'<span class="av-doc-icon">▣</span><div class="av-doc-info"><div class="av-doc-name" title="'+escapeHtml(folder.path)+'">'+escapeHtml(folder.name)+'</div>'
+      +'<div class="av-doc-meta">'+c.files+' file'+(c.files===1?'':'s')+' · '+c.folders+' folder'+(c.folders===1?'':'s')+'<span class="doc-kquest '+q.state+'">'+escapeHtml(q.label)+'</span></div></div>'
+      +'<div class="av-doc-actions">'
+      +(q.state==='pending'&&q.total>0||q.state==='generating'||q.failed>0?'<button class="av-doc-retry" onclick="event.stopPropagation();retryKQuest(\''+jsString(folder.path)+'\')" title="Continue: re-parse failed files + finish K-Quest">↺ continue</button>':'')
+      +'<button class="av-doc-del" onclick="event.stopPropagation();deleteDocFolder(\''+jsString(folder.path)+'\')" title="Delete upload">✕</button></div></div>'}).join('');
+  const files=(node.files||[]).map(d=>{const name=d.relative_path||d.filename;const icon=docFileIcon(d.filename);
+    const meta=[d.status||'ready',(d.chunk_count||0)+' chunks'].filter(Boolean).join(' · ');
+    return '<div class="av-doc-card" onclick="openDocViewer(\''+d.id+'\')" title="Open document"><span class="av-doc-icon">'+icon+'</span>'
+      +'<div class="av-doc-info"><div class="av-doc-name" title="'+escapeHtml(name)+'">'+escapeHtml(name)+'</div>'
+      +'<div class="av-doc-meta">'+escapeHtml(meta)+fileQuestMeta(d)+'</div></div>'
+      +'<div class="av-doc-actions"><button class="av-doc-del" onclick="event.stopPropagation();deleteDocs(\''+d.id+'\')" title="Delete document">✕</button></div></div>'}).join('');
+  el.innerHTML=head+folders+files;
+}
+async function openDocViewer(id){
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML='<div class="modal doc-view-modal"><h3>Loading document</h3><div class="doc-view-body"><div class="doc-view-empty">Loading...</div></div></div>';
+  document.body.appendChild(ov);ov.onclick=e=>{if(e.target===ov)ov.remove()};
+  try{const r=await fetch(API+'/api/documents/'+encodeURIComponent(id));const data=await r.json();
+    if(!r.ok)throw new Error(data.detail||'Document failed');renderDocViewer(ov,data)
+  }catch(e){ov.remove();toast(e.message||'Could not open document','error')}
+}
+function renderDocViewer(ov,data){
+  const doc=data.document||{};const chunks=data.chunks||[],quests=data.quests||[];let tab='text';
+  const name=doc.relative_path||doc.filename||'Document';
+  const render=()=>{
+    const chips=[doc.status||'',(doc.parser||'parser'),(doc.chunk_count||chunks.length||0)+' chunks',(doc.quest_count||quests.length||0)+' K-Quest',doc.token_count?doc.token_count+' tokens':''].filter(Boolean);
+    ov.innerHTML='<div class="modal doc-view-modal"><h3 title="'+escapeHtml(name)+'">'+escapeHtml(doc.filename||name)+'</h3>'
+      +'<div class="doc-view-path">'+escapeHtml(name)+'</div>'
+      +'<div class="doc-view-meta">'+chips.map(c=>'<span class="doc-view-chip">'+escapeHtml(c)+'</span>').join('')+(data.truncated?'<span class="doc-view-chip">Preview truncated</span>':'')+'</div>'
+      +'<div class="doc-view-tabs"><button class="doc-view-tab '+(tab==='text'?'active':'')+'" data-tab="text">Text</button>'
+      +'<button class="doc-view-tab '+(tab==='chunks'?'active':'')+'" data-tab="chunks">Chunks</button>'
+      +'<button class="doc-view-tab '+(tab==='quests'?'active':'')+'" data-tab="quests">K-Quest</button></div>'
+      +'<div class="doc-view-body">'+docViewBody(tab,data)+'</div>'
+      +'<div class="modal-actions"><button class="mbtn secondary" id="btnCloseDocView">Close</button></div></div>';
+    ov.querySelectorAll('.doc-view-tab').forEach(btn=>btn.onclick=()=>{tab=btn.dataset.tab;render()});
+    ov.querySelector('#btnCloseDocView').onclick=()=>ov.remove();
+  };
+  render();
+}
+function docViewBody(tab,data){
+  const chunks=data.chunks||[],quests=data.quests||[];
+  if(tab==='text')return data.text?'<div class="doc-view-pre">'+escapeHtml(data.text)+'</div>':'<div class="doc-view-empty">No extracted text available</div>';
+  if(tab==='chunks')return chunks.length?'<div class="doc-view-list">'+chunks.map(c=>'<div class="doc-view-item"><div class="doc-view-item-title">Chunk '+((c.chunk_index||0)+1)+'</div><div class="doc-view-item-meta">'+escapeHtml([c.chunk_type,c.source_path,c.page?'page '+c.page:'',c.sheet?'sheet '+c.sheet:'',(c.token_count||0)+' tokens'].filter(Boolean).join(' · '))+'</div><div class="doc-view-item-text">'+escapeHtml(c.text||'')+'</div></div>').join('')+'</div>':'<div class="doc-view-empty">No chunks available</div>';
+  return quests.length?'<div class="doc-view-list">'+quests.map((q,i)=>'<div class="doc-view-item"><div class="doc-view-item-title">'+(i+1)+'. '+escapeHtml(q.question||'Question')+'</div>'+(q.answer?'<div class="doc-view-item-text">'+escapeHtml(q.answer)+'</div>':'')+'</div>').join('')+'</div>':'<div class="doc-view-empty">No K-Quest questions available yet</div>';
+}
+async function deleteDocFolder(path){
+  path=normDocPath(path);if(!path)return;
+  const docs=docsInFolder(path);if(!docs.length){toast('Folder is already empty');return}
+  if(!confirm('Delete '+path+' and '+docs.length+' document'+(docs.length===1?'':'s')+' from the database?'))return;
+  const collectionId=folderCollectionId(path);
+  const url=collectionId?API+'/api/documents/collections/'+encodeURIComponent(collectionId):API+'/api/documents/folders?path='+encodeURIComponent(path);
+  const r=await fetch(url,{method:'DELETE'});
+  if(!r.ok){toast('Delete failed','error');return}
+  if(currentDocPath&&(currentDocPath===path||currentDocPath.startsWith(path+'/')))currentDocPath='';
+  toast('Upload removed','success');refreshDocs();
+}
+async function deleteApiClick(id){if(!confirm('Delete this API?'))return;await fetch(API+'/api/tools/'+id,{method:'DELETE'});refreshApis()}
+async function editApiClick(id){try{const r=await fetch(API+'/api/tools/'+id);openApiModal(await r.json())}catch(e){toast('Failed','error')}}
+/* ── Upload Queue (parallel uploads, progress per folder) ───── */
+const UploadQueue={
+  _pending:[],_active:[],_done:[],MAX_CONCURRENT:3,BATCH_SIZE:500,_seq:0,
+  _uid(){return ++this._seq},
+  add(files){
+    const arr=Array.from(files||[]);if(!arr.length)return;
+    const name=(arr[0].webkitRelativePath||arr[0].name).split('/')[0]||'Upload';
+    const batches=[];
+    for(let i=0;i<arr.length;i+=this.BATCH_SIZE)batches.push(arr.slice(i,i+this.BATCH_SIZE));
+    batches.forEach((batch,bi)=>{
+      const bname=batches.length>1?name+' ('+(bi+1)+'/'+batches.length+')':name;
+      this._pending.push({id:this._uid(),name:bname,files:batch,status:'pending',progress:0,error:null,jobId:null});
+    });
+    this._flush();this._render();
+  },
+  _flush(){
+    while(this._active.length<this.MAX_CONCURRENT&&this._pending.length){
+      const item=this._pending.shift();this._active.push(item);this._run(item);
+    }
+  },
+  async _run(item){
+    item.status='uploading';item.progress=0;this._render();
+    try{
+      const paths=item.files.map(f=>f.webkitRelativePath||f.name);
+      const fd=new FormData();item.files.forEach(f=>fd.append('files',f));
+      fd.append('paths',JSON.stringify(paths));fd.append('collection_name',item.name);
+      const r=await fetch(API+'/api/documents/ingest',{method:'POST',body:fd,headers:ModelConfig.headers()});
+      const j=await r.json();
+      if(!r.ok){item.status='error';item.error=j.detail||'Upload failed';}
+      else{item.status='processing';item.jobId=j.job_id;this._poll(item);return;}
+    }catch(e){item.status='error';item.error=e.message||'Upload failed';}
+    this._done.unshift(item);this._active=this._active.filter(x=>x!==item);
+    this._flush();this._render();
+  },
+  async _poll(item){
+    for(let i=0;i<300;i++){
+      await new Promise(r=>setTimeout(r,2000));
+      try{
+        const r=await fetch(API+'/api/documents/jobs/'+item.jobId);
+        const j=await r.json();const job=j.job||{};
+        const tot=Math.max(1,job.total_files||1);
+        if(job.status==='generating_quests')
+          item.progress=50+Math.round(((job.quest_processed_files||0)/Math.max(1,job.quest_total_files||1))*50);
+        else item.progress=Math.round(((job.processed_files||0)/tot)*50);
+        this._render();
+        if(['done','done_with_errors','failed'].includes(job.status)){
+          item.status=job.status==='done'?'done':'done_with_errors';
+          item.progress=100;
+          toast(job.status==='done'?'✓ '+item.name+' ready':item.name+' finished with errors',job.status==='done'?'success':'error');
+          await refreshDocs();
+          this._done.unshift(item);this._active=this._active.filter(x=>x!==item);
+          this._flush();this._render();return;
+        }
+      }catch(e){}
+    }
+    item.status='error';item.error='Timed out';
+    this._done.unshift(item);this._active=this._active.filter(x=>x!==item);
+    this._flush();this._render();
+  },
+  retry(id){
+    const item=[...this._done,...this._active].find(x=>x.id===id);if(!item)return;
+    item.status='pending';item.progress=0;item.error=null;item.jobId=null;
+    this._done=this._done.filter(x=>x.id!==id);
+    this._active=this._active.filter(x=>x.id!==id);
+    this._pending.unshift(item);this._flush();this._render();
+  },
+  _render(){
+    const el=document.getElementById('uploadQueueEl');if(!el)return;
+    const all=[...this._active,...this._pending,...this._done.slice(0,6)];
+    if(!all.length){el.innerHTML='';return;}
+    const IC={pending:'·',uploading:'↑',processing:'⟳',done:'✓',done_with_errors:'⚠',error:'✕'};
+    const CL={pending:'uq-wait',uploading:'uq-run',processing:'uq-run',done:'uq-ok',done_with_errors:'uq-warn',error:'uq-err'};
+    el.innerHTML=all.map(item=>{
+      const showBar=item.status==='uploading'||item.status==='processing';
+      const pct=item.status==='done'||item.status==='done_with_errors'?100:item.progress;
+      return '<div class="uq-item '+(CL[item.status]||'')+'">'
+        +'<span class="uq-icon">'+(IC[item.status]||'·')+'</span>'
+        +'<span class="uq-name">'+escapeHtml(item.name)+'</span>'
+        +'<span class="uq-count">'+item.files.length+' file'+(item.files.length===1?'':'s')+'</span>'
+        +(showBar?'<div class="uq-bar"><div class="uq-bar-fill" style="width:'+pct+'%"></div></div><span class="uq-pct">'+pct+'%</span>':'')
+        +(item.error?'<span class="uq-errtxt">'+escapeHtml(item.error)+'</span>':'')
+        +((item.status==='error'||item.status==='done_with_errors')?'<button class="uq-retry-btn" onclick="UploadQueue.retry('+item.id+')">↺ retry</button>':'')
+        +'</div>';
+    }).join('');
+  }
+};
+
+async function retryKQuest(path){
+  const collId=folderCollectionId(path);
+  if(!collId){toast('Cannot identify collection for this folder','error');return;}
+  try{
+    const r=await fetch(API+'/api/documents/collections/'+encodeURIComponent(collId)+'/retry',{method:'POST',headers:ModelConfig.headers()});
+    const j=await r.json();
+    if(r.ok){
+      if(j.status==='nothing_to_retry')toast('All files already have K-Quest data','info');
+      else{toast('K-Quest retry queued','success');setTimeout(refreshDocs,3000);}
+    }else toast(j.detail||'Retry failed','error');
+  }catch(e){toast('Retry failed','error');}
+}
+
+/* ── Model provider (Gemini BYOK) ─────────────────────────── */
+const ModelConfig={
+  STORE:'va.modelSettings',
+  defaults:{provider:'local',api_key:'',llm_model:'',stt_model:'',tts_model:'',reasoning_effort:'low',
+    use_llm:true,use_stt:true,use_tts:true,live_captions:false},
+  server:null,keyOk:null,testedKey:null,state:null,
+  get(){if(!this.state){let s={};try{s=JSON.parse(localStorage.getItem(this.STORE)||'{}')}catch(e){}
+    this.state=Object.assign({},this.defaults,s)}return this.state},
+  save(s){this.state=Object.assign({},this.defaults,s);
+    try{localStorage.setItem(this.STORE,JSON.stringify(this.state))}catch(e){}this.render()},
+  isGemini(){return this.get().provider==='gemini'},
+  missingKey(){return this.isGemini()&&!this.get().api_key&&!(this.server&&this.server.server_key)},
+  payload(){return this.isGemini()?Object.assign({},this.get()):{provider:'local'}},
+  headers(){return this.isGemini()?{'X-Model-Settings':JSON.stringify(this.payload())}:{}},
+  render(){const g=this.isGemini();
+    document.getElementById('modelLabel').textContent=g?'Gemini':'Local';
+    document.getElementById('svcGeminiWrap').style.display=g?'':'none';
+    document.getElementById('svcGemini').className='d'+(this.keyOk===true?' on':this.keyOk===false?' off':'')},
+  async loadDefaults(){try{const r=await fetch(API+'/api/model/defaults');this.server=await r.json()}catch(e){this.server=null}},
+  async test(apiKey){
+    const r=await fetch(API+'/api/model/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:apiKey})});
+    const j=await r.json();this.testedKey=apiKey;this.keyOk=!!j.ok;this.render();return j},
+};
+
+function openModelModal(){
+  const cur=ModelConfig.get(),d=ModelConfig.server||{};
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML='<div class="modal"><h3>Model settings</h3>'
+    +'<div class="mode-toggle" id="mdlProvider"><button data-p="local">Local GPU stack</button><button data-p="gemini">Gemini API (your key)</button></div>'
+    +'<div id="mdlLocal"><div class="model-note">Faster-Whisper speech-to-text, Gemma 4 on vLLM, Kokoro text-to-speech, and AI4Bharat for Indic languages, all running on this server\'s GPUs.</div></div>'
+    +'<div id="mdlGemini">'
+    +'<div class="mf"><label>API key</label><div class="key-row"><input type="password" id="mdlKey" placeholder="Paste your Gemini API key" autocomplete="off" spellcheck="false">'
+    +'<button class="mbtn secondary" id="mdlShow" type="button">Show</button><button class="mbtn secondary" id="mdlTest" type="button">Test</button></div>'
+    +'<div class="model-test-status" id="mdlStatus"></div>'
+    +'<div class="hint">Stored in this browser only. It goes to this server with each call and is never written to disk. Create one at aistudio.google.com/apikey.'
+    +(d.server_key?' Leave empty to use the key configured on the server.':'')+'</div></div>'
+    +'<div class="mf"><label>Use Gemini for</label><div class="model-stage-row">'
+    +'<label class="model-check"><input type="checkbox" id="mdlUseStt">Speech-to-text</label>'
+    +'<label class="model-check"><input type="checkbox" id="mdlUseLlm">LLM</label>'
+    +'<label class="model-check"><input type="checkbox" id="mdlUseTts">Text-to-speech</label></div>'
+    +'<div class="hint">Unchecked stages keep using the local GPU services. With all three checked, no local GPU service is needed, Indic languages included.</div></div>'
+    +'<div class="mf"><label>Chat model</label><input type="text" id="mdlLlm" list="mdlChatList" spellcheck="false"></div>'
+    +'<div class="model-grid"><div class="mf"><label>Speech-to-text model</label><input type="text" id="mdlStt" list="mdlChatList" spellcheck="false"></div>'
+    +'<div class="mf"><label>Text-to-speech model</label><input type="text" id="mdlTts" list="mdlTtsList" spellcheck="false"></div></div>'
+    +'<datalist id="mdlChatList"></datalist><datalist id="mdlTtsList"></datalist>'
+    +'<div class="mf"><label>Reasoning effort</label><select id="mdlEffort">'
+    +'<option value="low">Low (fastest on Gemini 3)</option><option value="medium">Medium</option><option value="high">High</option>'
+    +'<option value="none">None (Gemini 2.5 Flash only)</option><option value="">Model default</option></select>'
+    +'<div class="hint">Thinking adds latency before the first spoken word. Low suits voice.</div></div>'
+    +'<div class="mf"><label class="model-check"><input type="checkbox" id="mdlCaptions">Live captions while speaking</label>'
+    +'<div class="hint">Re-transcribes every 1.5 s while you talk, which means extra paid speech-to-text calls.</div></div>'
+    +'</div>'
+    +'<div class="modal-actions"><button class="mbtn secondary" id="mdlCancel">Cancel</button><button class="mbtn primary" id="mdlSave">Save</button></div></div>';
+  document.body.appendChild(ov);
+  const $=id=>ov.querySelector('#'+id);
+  let provider=cur.provider;
+  const setProvider=p=>{provider=p;ov.querySelectorAll('#mdlProvider button').forEach(b=>b.classList.toggle('active',b.dataset.p===p));
+    $('mdlLocal').style.display=p==='local'?'':'none';$('mdlGemini').style.display=p==='gemini'?'':'none'};
+  ov.querySelectorAll('#mdlProvider button').forEach(b=>b.onclick=()=>setProvider(b.dataset.p));
+  setProvider(provider);
+  $('mdlKey').value=cur.api_key||'';
+  $('mdlUseStt').checked=!!cur.use_stt;$('mdlUseLlm').checked=!!cur.use_llm;$('mdlUseTts').checked=!!cur.use_tts;
+  $('mdlLlm').value=cur.llm_model||'';$('mdlStt').value=cur.stt_model||'';$('mdlTts').value=cur.tts_model||'';
+  $('mdlLlm').placeholder=d.llm_model||'gemini-3.8-flash';$('mdlStt').placeholder='Same as chat model';
+  $('mdlTts').placeholder=d.tts_model||'gemini-3.8-flash-tts';
+  $('mdlEffort').value=cur.reasoning_effort??'low';$('mdlCaptions').checked=!!cur.live_captions;
+  const fill=(id,names)=>{$(id).innerHTML='';(names||[]).forEach(n=>{const o=document.createElement('option');o.value=n;$(id).appendChild(o)})};
+  const status=(text,cls)=>{const el=$('mdlStatus');el.textContent=text;el.className='model-test-status'+(cls?' '+cls:'')};
+  $('mdlShow').onclick=()=>{const k=$('mdlKey');const show=k.type==='password';k.type=show?'text':'password';$('mdlShow').textContent=show?'Hide':'Show'};
+  $('mdlTest').onclick=async()=>{
+    status('Checking key from the server…');$('mdlTest').disabled=true;
+    try{const j=await ModelConfig.test($('mdlKey').value.trim());
+      if(j.ok){fill('mdlChatList',j.chat_models);fill('mdlTtsList',j.tts_models);
+        status('Key works. '+j.chat_models.length+' chat and '+j.tts_models.length+' TTS models available.','ok')}
+      else status(j.error||'Key check failed','err')}
+    catch(e){status('Could not reach the orchestrator','err')}
+    $('mdlTest').disabled=false};
+  const close=()=>ov.remove();
+  $('mdlCancel').onclick=close;ov.onclick=e=>{if(e.target===ov)close()};
+  $('mdlSave').onclick=()=>{
+    const next={provider,api_key:$('mdlKey').value.trim(),llm_model:$('mdlLlm').value.trim(),stt_model:$('mdlStt').value.trim(),
+      tts_model:$('mdlTts').value.trim(),reasoning_effort:$('mdlEffort').value,use_llm:$('mdlUseLlm').checked,
+      use_stt:$('mdlUseStt').checked,use_tts:$('mdlUseTts').checked,live_captions:$('mdlCaptions').checked};
+    if(next.api_key!==ModelConfig.testedKey)ModelConfig.keyOk=null;
+    ModelConfig.save(next);
+    if(ModelConfig.missingKey()){status('Add an API key to use Gemini','err');return}
+    const ws=voiceAgent&&voiceAgent.ws;
+    if(ws&&ws.readyState===1&&voiceAgent.state!=='idle')ws.send(JSON.stringify({action:'set_model',model:ModelConfig.payload()}));
+    toast(provider==='gemini'?'Using Gemini for the next turn':'Using the local GPU stack','success');close()};
+}
+
+/* ── UI helpers ──────────────────────────────────────────── */
+function setWs(l,c){document.getElementById('wsLabel').textContent=l;
+  const d=document.getElementById('wsDot');d.className='wd';if(c)d.classList.add(c)}
+function toast(msg,type){const w=document.getElementById('toastWrap');
+  const d=document.createElement('div');d.className='toast '+(type||'info');d.textContent=msg;
+  w.appendChild(d);setTimeout(()=>d.remove(),3500)}
+async function checkServices(){try{const r=await fetch(API+'/api/services/status');const j=await r.json();
+  for(const k in j.services){const el=document.getElementById('svc'+k.charAt(0).toUpperCase()+k.slice(1));
+    if(el)el.className='d '+(j.services[k]==='online'?'on':'off')}}catch(e){}}
+
+function switchView(view){
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  const tab=document.querySelector('.nav-tab[data-view="'+view+'"]');
+  const panel=document.getElementById('view-'+view);
+  if(tab)tab.classList.add('active');
+  if(panel)panel.classList.add('active');
+}
+function switchAgentsTab(tab){
+  document.querySelectorAll('.agents-subtab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.agents-panel').forEach(x=>x.classList.remove('active'));
+  const btnTab=document.querySelector('.agents-subtab[data-atab="'+tab+'"]');
+  const panel=document.getElementById('atab-'+tab);
+  if(btnTab)btnTab.classList.add('active');
+  if(panel)panel.classList.add('active');
+  const btn=document.getElementById('btnAddAgent');
+  if(tab==='agents'){btn.style.display='';btn.textContent='+ New Agent';btn.onclick=()=>openAgentModal();
+    document.getElementById('avTitle').textContent='Agents';document.getElementById('avSubtitle').textContent='Create and manage your AI voice agents'}
+  else if(tab==='apis'){btn.style.display='';btn.textContent='+ Add API';btn.onclick=()=>openApiModal();
+    document.getElementById('avTitle').textContent='APIs';document.getElementById('avSubtitle').textContent='Your API library'}
+  else{btn.style.display='none';document.getElementById('avTitle').textContent='Documents';
+    document.getElementById('avSubtitle').textContent='Knowledge base for your agents'}
+}
+
+const TOUR_STEPS=[
+  {view:'sandbox',selector:'.nav-tab[data-view="sandbox"]',title:'Sandbox',text:'Run live calls here. This is where you test an agent before handing it to users.'},
+  {view:'sandbox',selector:'.svc-row',title:'Service Status',text:'These lights show whether STT, LLM, TTS, and Indic services are online. With Gemini selected, a Gemini light shows whether your key checked out.'},
+  {view:'sandbox',selector:'#btnModel',title:'Model',text:'Switch between the local GPU stack and the Gemini API with your own key. Speech in, speech out, streaming text and tools work the same either way.'},
+  {view:'sandbox',selector:'#agentPill',title:'Agent Picker',text:'Choose which agent is active for the next call. Switching here changes the voice, tools, language, and instructions.'},
+  {view:'sandbox',selector:'#sbAgentInfo',title:'Agent Brief',text:'Review the selected agent instructions, enabled tools, voice, language, and speed before testing.'},
+  {view:'sandbox',selector:'.sb-ctrls',title:'Call Controls',text:'Start opens the microphone and begins the WebSocket voice session. End stops mic capture and playback.'},
+  {view:'sandbox',selector:'.sb-transcript',title:'Transcript',text:'User speech, assistant replies, tool calls, and tool results appear here while the call is running.'},
+  {view:'agents',selector:'.nav-tab[data-view="agents"]',title:'Agents',text:'This workspace is where you create, edit, and organize reusable voice agents.'},
+  {view:'agents',tab:'agents',selector:['#agentsGrid .ag-card','#agentsGrid'],title:'Agent Cards',text:'Each card opens an agent for editing. The active dot marks the agent currently loaded in Sandbox.'},
+  {view:'agents',tab:'agents',selector:'#btnAddAgent',title:'New Agent',text:'Create another agent with its own instructions, APIs, voice, language, speed, and visual vibe.'},
+  {view:'agents',tab:'agents',selector:'.agents-subtabs',title:'Workspace Tabs',text:'Agents, APIs, and Documents share one library so every voice agent can reuse the same building blocks.'},
+  {view:'agents',tab:'apis',selector:'#btnAddAgent',title:'API Library',text:'Add mock or realtime APIs here. Human handoff is built in and available during live conversations.'},
+  {view:'agents',tab:'docs',selector:'#uploadZoneAV',title:'Documents',text:'Upload documents here to feed the knowledge base used by the voice agents.'},
+  {before:()=>GuidedTour.openAgentEditor(),selector:'.modal',title:'Agent Editor',text:'This editor controls the agent definition: name, behavior, tools, language, voice, speed, and vibe.'},
+  {before:()=>GuidedTour.openAgentEditor(),selector:'#agInstructions',title:'Instructions',text:'Write the role, boundaries, and conversation style. The model follows this on every call.'},
+  {before:()=>GuidedTour.openAgentEditor(),selector:'.chip-select',title:'APIs',text:'Attach APIs to the agent. The switch-agent tool is included automatically for handoffs.'},
+  {before:()=>GuidedTour.openAgentEditor(),selector:'#agLang',title:'Language',text:'Pick the conversation language. Indic languages route through the AI4Bharat speech stack.'},
+  {before:()=>GuidedTour.openAgentEditor(),selector:'#agVoice',title:'Voice',text:'Choose the voice style. Indic voices also use locked seeds for steadier sentence-to-sentence identity.'},
+  {before:()=>GuidedTour.openAgentEditor(),selector:'#agSpeed',title:'Speed',text:'Tune speech speed for the agent. Keep it near 1x for the most natural voice quality.'},
+  {before:()=>GuidedTour.openAgentEditor(),selector:'.modal-actions',title:'Save Changes',text:'Save writes the agent configuration. Cancel closes the editor without changing anything.'}
+];
+
+const GuidedTour={
+  index:0,root:null,openedModal:null,startView:'sandbox',startTab:'agents',_resize:null,_keydown:null,
+  start(){
+    this.root=document.getElementById('tourRoot');
+    this.index=0;this.openedModal=null;
+    const activeView=document.querySelector('.nav-tab.active');
+    const activeTab=document.querySelector('.agents-subtab.active');
+    this.startView=activeView?.dataset.view||'sandbox';this.startTab=activeTab?.dataset.atab||'agents';
+    this.root.hidden=false;
+    this._resize=()=>this.position();this._keydown=e=>{
+      if(e.key==='Escape')this.end(true);
+      else if(e.key==='ArrowRight')this.next();
+      else if(e.key==='ArrowLeft')this.prev();
+    };
+    window.addEventListener('resize',this._resize);document.addEventListener('keydown',this._keydown);
+    document.getElementById('tourSkip').onclick=()=>this.end(true);
+    document.getElementById('tourPrev').onclick=()=>this.prev();
+    document.getElementById('tourNext').onclick=()=>this.next();
+    this.show(0);
+  },
+  show(i){
+    if(i<0||i>=TOUR_STEPS.length){this.end(false);return}
+    this.index=i;
+    const step=TOUR_STEPS[i];
+    if(step.view)switchView(step.view);
+    if(step.tab)switchAgentsTab(step.tab);
+    if(step.before)step.before();
+    setTimeout(()=>this.position(),90);
+  },
+  next(){this.show(this.index+1)},
+  prev(){this.show(this.index-1)},
+  targetFor(step){
+    const selectors=Array.isArray(step.selector)?step.selector:[step.selector];
+    for(const sel of selectors){
+      const el=document.querySelector(sel);
+      if(!el)continue;
+      const st=getComputedStyle(el),r=el.getBoundingClientRect();
+      if(st.display!=='none'&&st.visibility!=='hidden'&&r.width>0&&r.height>0)return el;
+    }
+    return document.querySelector('.app');
+  },
+  position(){
+    if(!this.root||this.root.hidden)return;
+    const step=TOUR_STEPS[this.index],target=this.targetFor(step);
+    if(target?.scrollIntoView)target.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});
+    requestAnimationFrame(()=>{
+      const rect=(target||document.body).getBoundingClientRect();
+      const pad=8;
+      const left=Math.max(8,rect.left-pad),top=Math.max(8,rect.top-pad);
+      const right=Math.min(window.innerWidth-8,rect.right+pad),bottom=Math.min(window.innerHeight-8,rect.bottom+pad);
+      const w=Math.max(24,right-left),h=Math.max(24,bottom-top);
+      this.setBox('tourScrimTop',0,0,window.innerWidth,top);
+      this.setBox('tourScrimRight',right,top,window.innerWidth-right,h);
+      this.setBox('tourScrimBottom',0,bottom,window.innerWidth,window.innerHeight-bottom);
+      this.setBox('tourScrimLeft',0,top,left,h);
+      this.setBox('tourFocus',left,top,w,h);
+      const focus=document.getElementById('tourFocus');
+      const radius=getComputedStyle(target).borderRadius||'14px';focus.style.borderRadius=radius;
+      document.getElementById('tourTitle').textContent=step.title;
+      document.getElementById('tourText').textContent=step.text;
+      document.getElementById('tourKicker').textContent='Step '+(this.index+1)+' of '+TOUR_STEPS.length;
+      document.getElementById('tourCount').textContent=(this.index+1)+'/'+TOUR_STEPS.length;
+      document.getElementById('tourProgress').style.width=((this.index+1)/TOUR_STEPS.length*100)+'%';
+      document.getElementById('tourPrev').disabled=this.index===0;
+      document.getElementById('tourNext').textContent=this.index===TOUR_STEPS.length-1?'Done':'Next';
+      this.placeCard(left,top,w,h);
+    });
+  },
+  setBox(id,left,top,width,height){
+    const el=document.getElementById(id);
+    el.style.left=left+'px';el.style.top=top+'px';el.style.width=Math.max(0,width)+'px';el.style.height=Math.max(0,height)+'px';
+  },
+  placeCard(left,top,w,h){
+    const card=document.getElementById('tourCard');
+    card.classList.remove('above');
+    const cw=card.offsetWidth,ch=card.offsetHeight,gap=14;
+    let x=left+w+gap,y=top;
+    if(x+cw>window.innerWidth-16)x=left-cw-gap;
+    if(x<16)x=Math.min(Math.max(16,left),window.innerWidth-cw-16);
+    if(y+ch>window.innerHeight-16){y=top-ch-gap;card.classList.add('above')}
+    if(y<16){y=Math.min(window.innerHeight-ch-16,top+h+gap);card.classList.remove('above')}
+    card.style.left=Math.max(16,Math.min(window.innerWidth-cw-16,x))+'px';
+    card.style.top=Math.max(16,Math.min(window.innerHeight-ch-16,y))+'px';
+  },
+  openAgentEditor(){
+    switchView('agents');switchAgentsTab('agents');
+    let modal=document.querySelector('.modal-overlay');
+    if(!modal){openAgentModal(activeAgentId||allAgents[0]?.id);modal=document.querySelector('.modal-overlay');this.openedModal=modal}
+  },
+  closeTourModal(){if(this.openedModal&&document.body.contains(this.openedModal)){this.openedModal.remove()}this.openedModal=null},
+  end(){
+    this.closeTourModal();
+    if(this.root)this.root.hidden=true;
+    window.removeEventListener('resize',this._resize);document.removeEventListener('keydown',this._keydown);
+    switchView(this.startView);if(this.startView==='agents')switchAgentsTab(this.startTab);
+  }
+};
+
+/* ── Init ────────────────────────────────────────────────── */
+const voiceAgent=new VoiceAgent();voiceAgent.connect();
+document.getElementById('btnStart').onclick=()=>voiceAgent.startCall();
+document.getElementById('btnEnd').onclick=()=>voiceAgent.endCall();
+document.getElementById('btnTour').onclick=()=>GuidedTour.start();
+document.querySelectorAll('.nav-tab').forEach(b=>{b.onclick=()=>switchView(b.dataset.view)});
+// Agents view sub-tabs
+document.querySelectorAll('.agents-subtab').forEach(b=>{b.onclick=()=>switchAgentsTab(b.dataset.atab)});
+// Agents view upload zone
+const uzAV=document.getElementById('uploadZoneAV'),fiAV=document.getElementById('fileInputAV'),foAV=document.getElementById('folderInputAV');
+document.getElementById('btnUploadFilesAV').onclick=e=>{e.stopPropagation();fiAV.click()};
+document.getElementById('btnUploadFolderAV').onclick=e=>{e.stopPropagation();foAV.click()};
+uzAV.onclick=e=>{if(!e.target.closest('button')&&e.target.tagName!=='INPUT')fiAV.click()};
+fiAV.onchange=()=>{if(fiAV.files.length)UploadQueue.add(fiAV.files);fiAV.value=''};
+foAV.onchange=()=>{if(foAV.files.length)UploadQueue.add(foAV.files);foAV.value=''};
+uzAV.ondragover=e=>{e.preventDefault();uzAV.classList.add('drag')};uzAV.ondragleave=()=>uzAV.classList.remove('drag');
+uzAV.ondrop=async e=>{
+  e.preventDefault();uzAV.classList.remove('drag');
+  const items=[...(e.dataTransfer.items||[])].filter(i=>i.kind==='file');
+  const dirs=items.filter(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()?.isDirectory);
+  if(dirs.length){
+    for(const item of dirs){
+      const entry=item.webkitGetAsEntry();
+      const{files,paths}=await _readDirEntry(entry,'');
+      if(files.length){
+        // Build a FileList-like array with webkitRelativePath info stored as _path
+        files.forEach((f,i)=>Object.defineProperty(f,'webkitRelativePath',{get:()=>paths[i],configurable:true}));
+        UploadQueue.add(files);
+      }
+    }
+    const plain=items.filter(i=>!(i.webkitGetAsEntry&&i.webkitGetAsEntry()?.isDirectory));
+    if(plain.length)UploadQueue.add(plain.map(i=>i.getAsFile()).filter(Boolean));
+  }else{
+    UploadQueue.add(e.dataTransfer.files);
+  }
+};
+async function _readDirEntry(entry,base){
+  const files=[],paths=[];
+  await new Promise(resolve=>{
+    const r=entry.createReader();
+    function read(){r.readEntries(async entries=>{
+      if(!entries.length){resolve();return}
+      for(const e of entries){
+        if(e.isFile)await new Promise(r2=>e.file(f=>{files.push(f);paths.push(base?base+'/'+f.name:f.name);r2()},r2));
+        else{const sub=await _readDirEntry(e,base?base+'/'+e.name:e.name);files.push(...sub.files);paths.push(...sub.paths);}
+      }
+      read();
+    });}
+    read();
+  });
+  return{files,paths};
+}
+document.getElementById('btnAddAgent').onclick=()=>openAgentModal();
+document.getElementById('btnModel').onclick=()=>openModelModal();
+ModelConfig.render();ModelConfig.loadDefaults();
+refreshDocs();refreshApis();loadAgents();checkServices();
+setInterval(checkServices,15000);setInterval(refreshDocs,30000);
+</script>
+<div id="agentTooltip"></div>
+</body>
+</html>

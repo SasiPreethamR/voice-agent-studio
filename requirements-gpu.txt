@@ -1,0 +1,6 @@
+# Local GPU services (Linux + NVIDIA). Install on top of requirements.txt.
+torch
+faster-whisper          # stt_server.py
+kokoro                  # tts_server.py
+vllm                    # start_gemma4.sh (Gemma 4 via OpenAI-compatible server)
+# AI4Bharat Indic server: see indic/README.md (pins transformers==4.46.1 in indic/pyenv)
