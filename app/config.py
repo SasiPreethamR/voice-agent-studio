@@ -9,7 +9,11 @@ agree. Every value can be overridden through the environment.
 import os
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).parent
+APP_DIR = Path(__file__).resolve().parent
+ROOT_DIR = APP_DIR.parent                 # repo root: .env, data/, logs/, cert.pem live here
+STATIC_DIR = APP_DIR / "static"           # Studio UI + operator console
+DATA_DIR = ROOT_DIR / "data"              # agents, tools, handoffs, documents (runtime state)
+DATA_DIR.mkdir(exist_ok=True)
 
 
 def _load_dotenv(path: Path) -> None:

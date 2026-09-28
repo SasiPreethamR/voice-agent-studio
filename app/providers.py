@@ -23,7 +23,7 @@ from typing import Optional
 import numpy as np
 import httpx
 
-from config import (
+from app.config import (
     STT_URL, LLM_URL, TTS_URL, INDIC_URL, LLM_MODEL,
     INPUT_SAMPLE_RATE, OUTPUT_SAMPLE_RATE,
     GEMINI_API_BASE, GEMINI_LLM_MODEL, GEMINI_STT_MODEL, GEMINI_TTS_MODEL,

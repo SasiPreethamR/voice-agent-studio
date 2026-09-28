@@ -5,7 +5,8 @@
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 . "$SCRIPT_DIR/_env.sh"
 
 MODEL="${LLM_MODEL:-google/gemma-4-31B-it}"
@@ -52,9 +53,9 @@ systemd-run --user --unit=gemma4-vllm --collect \
   --setenv=CUDA_VISIBLE_DEVICES="$GPU_DEVICES" \
   --setenv=VLLM_USE_DEEP_GEMM=0 \
   "${EXTRA_ENV[@]}" \
-  --working-directory="$SCRIPT_DIR" \
-  -p StandardOutput=append:"$SCRIPT_DIR/logs/gemma_vllm.log" \
-  -p StandardError=append:"$SCRIPT_DIR/logs/gemma_vllm.log" \
+  --working-directory="$ROOT_DIR" \
+  -p StandardOutput=append:"$ROOT_DIR/logs/gemma_vllm.log" \
+  -p StandardError=append:"$ROOT_DIR/logs/gemma_vllm.log" \
   "$PYTHON" -m vllm.entrypoints.openai.api_server \
   --model "$MODEL" \
   --served-model-name "$SERVED_MODEL_NAME" \
@@ -70,7 +71,7 @@ sleep 2
 PID=$(systemctl --user show -p MainPID --value gemma4-vllm 2>/dev/null)
 echo "$PID" > logs/gemma_vllm.pid
 echo "Server started as systemd --user unit 'gemma4-vllm' (MainPID=$PID)"
-echo "Logs: tail -f $SCRIPT_DIR/logs/gemma_vllm.log"
+echo "Logs: tail -f $ROOT_DIR/logs/gemma_vllm.log"
 echo "Status: systemctl --user status gemma4-vllm"
 echo "Stop:   systemctl --user stop gemma4-vllm"
 echo "Test:   curl http://localhost:8003/v1/models"

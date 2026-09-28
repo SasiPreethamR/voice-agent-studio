@@ -65,7 +65,7 @@ def _find_ffmpeg() -> str:
 
 FFMPEG = _find_ffmpeg()
 
-load_dotenv(INDIC_DIR.parent / ".env")
+load_dotenv(INDIC_DIR.parent.parent / ".env")  # repo-root .env
 load_dotenv(INDIC_DIR / ".env")  # legacy location; the root .env takes precedence
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")

@@ -28,13 +28,13 @@ flowchart LR
 
 | Component | File | Model | Port |
 |---|---|---|---|
-| Orchestrator + UI | `orchestrator.py` | - | 8080 |
-| Speech-to-text | `stt_server.py` | Faster-Whisper large-v3-turbo | 8010 |
-| LLM | `start_gemma4.sh` (vLLM) | `google/gemma-4-31B-it` | 8003 |
-| Text-to-speech | `tts_server.py` | Kokoro-82M | 8011 |
-| Indic speech | `indic_server.py` | IndicConformer 600M + Indic Parler-TTS | 7862 |
+| Orchestrator + UI | `app/` (`python -m app.main`) | - | 8080 |
+| Speech-to-text | `services/stt_server.py` | Faster-Whisper large-v3-turbo | 8010 |
+| LLM | `scripts/start_gemma4.sh` (vLLM) | `google/gemma-4-31B-it` | 8003 |
+| Text-to-speech | `services/tts_server.py` | Kokoro-82M | 8011 |
+| Indic speech | `services/indic_server.py` | IndicConformer 600M + Indic Parler-TTS | 7862 |
 
-All model calls go through `model_providers.py`. Endpoints and defaults live in `config.py`.
+All model calls go through `app/providers.py`. Endpoints and defaults live in `app/config.py`.
 
 ## Quick start: Gemini mode (no GPU)
 
@@ -44,7 +44,7 @@ Needs Python 3.10+. The core install is about 25 small packages (no torch, no CU
 git clone https://github.com/SasiPreethamR/voice-agent-studio && cd voice-agent-studio
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-MODEL_PROVIDER=gemini python orchestrator.py
+MODEL_PROVIDER=gemini python -m app.main
 ```
 
 1. Open http://localhost:8080. Browsers only allow the microphone on `localhost` or over HTTPS.
@@ -66,14 +66,14 @@ Tested on Linux with NVIDIA GPUs. Gemma 4 31B uses two H200-class GPUs by defaul
 ```bash
 pip install -r requirements.txt -r requirements-docs.txt -r requirements-gpu.txt
 cp .env.example .env        # add HF_TOKEN; adjust GPU placement
-bash start_all.sh           # LLM, STT, TTS, Indic server, orchestrator
-bash stop_all.sh
+bash scripts/start_all.sh   # LLM, STT, TTS, Indic server, orchestrator
+bash scripts/stop_all.sh
 ```
 
 - Each service runs as a `systemd --user` unit, so it survives SSH disconnects (needs `loginctl enable-linger`). Logs go to `logs/`.
-- Start or stop services individually with `start_<name>.sh` / `stop_<name>.sh`.
+- Start or stop services individually with `scripts/start_<name>.sh` / `scripts/stop_<name>.sh`.
 - GPU placement is set with `LLM_GPUS`, `STT_GPU`, `TTS_GPU` and `INDIC_GPU`. See `.env.example`.
-- The Indic server needs a pinned `transformers` version. See [indic/instructions.md](indic/instructions.md).
+- The Indic server needs a pinned `transformers` version. See [services/indic/instructions.md](services/indic/instructions.md).
 - In this mode (`MODEL_PROVIDER=local`, the default) each browser can still switch individual stages to Gemini in Model settings. For example, keep Whisper and Kokoro local and use Gemini only as the LLM.
 
 ### HTTPS
@@ -90,22 +90,30 @@ openssl req -x509 -newkey rsa:2048 -sha256 -days 825 -nodes \
 Settings come from environment variables or a `.env` file in the repo root; see [.env.example](.env.example). Agents, tools, handoffs and uploaded documents are stored in `data/`, which is created on first run and is gitignored.
 
 Optional assets:
-- `static/hold_music.mp3`: looping music played while a tool runs or while the caller waits for a human. Not included; use any MP3 you have the rights to.
-- `static/tool_wait.pcm`: short spoken cue (24 kHz, 16-bit mono PCM) played when a tool starts.
+- `app/static/hold_music.mp3`: looping music played while a tool runs or while the caller waits for a human. Not included; use any MP3 you have the rights to.
+- `app/static/tool_wait.pcm`: short spoken cue (24 kHz, 16-bit mono PCM) played when a tool starts.
 
 ## Project layout
 
 ```
-orchestrator.py      WebSocket voice loop, agents, tools, handoff, REST API
-model_providers.py   STT / LLM / TTS calls for the local stack and Gemini
-config.py            endpoints, model defaults, .env loading
-document_store.py    document parsing, chunking, embeddings, retrieval (SQLite)
-stt_server.py        Faster-Whisper server (OpenAI-compatible)
-tts_server.py        Kokoro server (OpenAI-compatible)
-indic_server.py      AI4Bharat ASR + TTS server
-indic/               Indic server docs, requirements, playground UI
-static/              Studio UI (index.html) and operator console (human.html)
-start_*.sh stop_*.sh service launchers
+app/                     orchestrator: what you run (python -m app.main)
+├── main.py              FastAPI app, routers, static UI
+├── voice.py             /ws/voice call loop: VAD, barge-in, STT -> LLM -> streamed TTS
+├── tools.py             API tool library and execution (mock, cURL, switch_agent)
+├── agents.py            agent definitions
+├── handoff.py           human handoff queue, operator console socket, audio relay
+├── api.py               REST API: documents, tools, agents, model provider, health
+├── providers.py         STT / LLM / TTS calls for the local stack and Gemini
+├── documents.py         document parsing, chunking, embeddings, retrieval (SQLite)
+├── config.py            endpoints, model defaults, .env loading
+└── static/              Studio UI (index.html) and operator console (human.html)
+services/                optional self-hosted model servers (GPU)
+├── stt_server.py        Faster-Whisper, OpenAI-compatible
+├── tts_server.py        Kokoro, OpenAI-compatible
+├── indic_server.py      AI4Bharat ASR + TTS
+└── indic/               Indic server docs, requirements, playground UI
+scripts/                 start_*.sh / stop_*.sh service launchers (systemd --user)
+data/                    runtime state, created on first run (gitignored)
 ```
 
 ## License

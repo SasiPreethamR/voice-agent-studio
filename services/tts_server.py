@@ -9,7 +9,7 @@ import os
 import struct
 from typing import Optional
 
-os.environ.setdefault("CUDA_VISIBLE_DEVICES", "7")  # start_tts.sh sets TTS_GPU
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "7")  # scripts/start_tts.sh sets TTS_GPU
 
 import torch
 import numpy as np

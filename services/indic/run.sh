@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 # Standalone playground mode (HTTPS on :7860). The orchestrator stack uses
-# ../start_indic.sh instead. Server code lives in ../indic_server.py.
+# scripts/start_indic.sh instead. Server code lives in ../indic_server.py.
 cd "$(dirname "$0")"
 ROOT_DIR="$(cd .. && pwd)"
 set -a; [ -f .env ] && . .env; set +a

@@ -1,11 +1,12 @@
 #!/bin/bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PID_FILE="$SCRIPT_DIR/logs/gemma_vllm.pid"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PID_FILE="$ROOT_DIR/logs/gemma_vllm.pid"
 
 if systemctl --user is-active --quiet gemma4-vllm 2>/dev/null; then
     echo "Stopping Gemma 4 31B systemd unit (gemma4-vllm)..."
     systemctl --user stop gemma4-vllm
-    rm -f "$PID_FILE" "$SCRIPT_DIR/logs/gemma4_31b.pid"
+    rm -f "$PID_FILE" "$ROOT_DIR/logs/gemma4_31b.pid"
     echo "Stopped."
     exit 0
 fi

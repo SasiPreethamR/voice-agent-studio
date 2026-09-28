@@ -21,9 +21,9 @@ from xml.etree import ElementTree as ET
 
 import numpy as np
 
-from model_providers import DEFAULT_MODEL, ModelSettings, chat_completion
+from app.config import DATA_DIR
+from app.providers import DEFAULT_MODEL, ModelSettings, chat_completion
 
-DATA_DIR = Path(__file__).parent / "data"
 DOCS_DIR = DATA_DIR / "documents"
 RAW_DIR = DOCS_DIR / "raw"
 TREE_DIR = DOCS_DIR / "tree"
@@ -1442,3 +1442,7 @@ class DocumentStore:
 
 class RAGPipeline(DocumentStore):
     pass
+
+
+# Shared document store used by the voice loop and the REST API.
+rag = RAGPipeline()

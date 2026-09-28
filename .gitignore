@@ -13,8 +13,8 @@ logs/
 *.pid
 
 # Model weights, caches and vendored dependencies (fetched during setup)
-indic/hf_cache/
-indic/pyenv/
+services/indic/hf_cache/
+services/indic/pyenv/
 hf_cache/
 
 # Python
@@ -32,4 +32,4 @@ venv/
 
 # Third-party media we do not redistribute; drop your own hold music here.
 Morning_Glass.mp3
-static/hold_music.mp3
+app/static/hold_music.mp3

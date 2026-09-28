@@ -38,7 +38,7 @@ pip install imageio-ffmpeg
 ```
 
 If the same Python environment also runs vLLM (which needs a newer
-transformers), install the pinned copy into `pyenv/` instead. `start_indic.sh`
+transformers), install the pinned copy into `pyenv/` instead. `scripts/start_indic.sh`
 puts it first on `PYTHONPATH` for this server only:
 
 ```bash
@@ -184,18 +184,18 @@ pkill -f "indic_server"
 ## 8. File layout
 
 ```
-voice_agents/
-├── indic_server.py     # FastAPI server (ASR + TTS routes + UI), port 7862
-├── start_indic.sh      # systemd launcher used by start_all.sh
-└── indic/
-    ├── run.sh          # standalone playground launcher (HTTPS :7860)
-    ├── requirements.txt
-    ├── README.md
-    ├── instructions.md # ← you are here
-    ├── .env            # HF_TOKEN, etc. (do NOT commit)
-    ├── certs/          # self-signed TLS material
-    ├── pyenv/          # pinned transformers==4.46.1 shim (PYTHONPATH)
-    ├── static/
-    │   └── index.html  # playground web UI
-    └── hf_cache/       # HuggingFace cache (~5 GB of model weights)
+voice-agent-studio/
+├── scripts/start_indic.sh   # systemd launcher used by scripts/start_all.sh
+└── services/
+    ├── indic_server.py      # FastAPI server (ASR + TTS routes + UI), port 7862
+    └── indic/
+        ├── run.sh           # standalone playground launcher (HTTPS :7860)
+        ├── requirements.txt
+        ├── README.md
+        ├── instructions.md  # ← you are here
+        ├── certs/           # self-signed TLS material (playground only)
+        ├── pyenv/           # pinned transformers==4.46.1 shim (PYTHONPATH)
+        ├── static/
+        │   └── index.html   # playground web UI
+        └── hf_cache/        # HuggingFace cache (~5 GB of model weights)
 ```

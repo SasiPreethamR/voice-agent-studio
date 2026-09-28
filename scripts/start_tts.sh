@@ -2,7 +2,8 @@
 # TTS Server: Kokoro-82M | GPU $TTS_GPU (default 7) | Port 8011
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 . "$SCRIPT_DIR/_env.sh"
 TTS_GPU="${TTS_GPU:-7}"
 
@@ -15,16 +16,16 @@ systemd-run --user --unit=voice-tts --collect \
   -p Restart=always -p RestartSec=5 \
   --setenv=CUDA_VISIBLE_DEVICES="$TTS_GPU" \
   --setenv=LD_LIBRARY_PATH="${TORCH_CUDA_LIBS}:${LD_LIBRARY_PATH}" \
-  --working-directory="$SCRIPT_DIR" \
-  -p StandardOutput=append:"$SCRIPT_DIR/logs/tts_server.log" \
-  -p StandardError=append:"$SCRIPT_DIR/logs/tts_server.log" \
-  "$PYTHON" "$SCRIPT_DIR/tts_server.py"
+  --working-directory="$ROOT_DIR" \
+  -p StandardOutput=append:"$ROOT_DIR/logs/tts_server.log" \
+  -p StandardError=append:"$ROOT_DIR/logs/tts_server.log" \
+  "$PYTHON" "$ROOT_DIR/services/tts_server.py"
 
 sleep 1
 PID=$(systemctl --user show -p MainPID --value voice-tts 2>/dev/null)
 echo "$PID" > logs/tts_server.pid
 echo "Started as systemd --user unit 'voice-tts' (MainPID=$PID)"
-echo "Logs:   tail -f $SCRIPT_DIR/logs/tts_server.log"
+echo "Logs:   tail -f $ROOT_DIR/logs/tts_server.log"
 echo "Status: systemctl --user status voice-tts"
 echo "Stop:   systemctl --user stop voice-tts"
 echo "Test:   curl http://localhost:8011/health"

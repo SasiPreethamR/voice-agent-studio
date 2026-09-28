@@ -4,11 +4,12 @@
 # mni, mr, ne, or, pa, sa, sat, sd, ta, te, ur).
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INDIC_DIR="$SCRIPT_DIR/indic"
-cd "$SCRIPT_DIR"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+INDIC_DIR="$ROOT_DIR/services/indic"
+cd "$ROOT_DIR"
 . "$SCRIPT_DIR/_env.sh"
 
-# Resolve NVRTC libs the same way indic/run.sh does, so torch can find
+# Resolve NVRTC libs the same way services/indic/run.sh does, so torch can find
 # libnvrtc-builtins matching the installed CUDA wheels.
 NVRTC_DIR=$("$PYTHON" -c "import os,glob; \
 hits=glob.glob(os.path.expanduser('~/.local/lib/python*/site-packages/nvidia/cu13/lib')) \
@@ -31,22 +32,22 @@ fi
 if [[ -d "$PYENV_DIR" ]]; then
   SYSTEMD_ENV+=(-E "PYTHONPATH=$PYENV_DIR")
 fi
-# IndicParler TTS runs on this GPU; IndicConformer ASR runs on CPU (see indic_server.py).
+# IndicParler TTS runs on this GPU; IndicConformer ASR runs on CPU (see services/indic_server.py).
 SYSTEMD_ENV+=(-E "CUDA_VISIBLE_DEVICES=${INDIC_GPU:-6}")
 
 systemd-run --user --unit=voice-indic --collect \
   -p Restart=always -p RestartSec=5 \
-  --working-directory="$SCRIPT_DIR" \
-  -p StandardOutput=append:"$SCRIPT_DIR/logs/indic_server.log" \
-  -p StandardError=append:"$SCRIPT_DIR/logs/indic_server.log" \
+  --working-directory="$ROOT_DIR" \
+  -p StandardOutput=append:"$ROOT_DIR/logs/indic_server.log" \
+  -p StandardError=append:"$ROOT_DIR/logs/indic_server.log" \
   "${SYSTEMD_ENV[@]}" \
-  "$PYTHON" "$SCRIPT_DIR/indic_server.py"
+  "$PYTHON" "$ROOT_DIR/services/indic_server.py"
 
 sleep 1
 PID=$(systemctl --user show -p MainPID --value voice-indic 2>/dev/null)
 echo "$PID" > logs/indic_server.pid
 echo "Started as systemd --user unit 'voice-indic' (MainPID=$PID)"
-echo "Logs:   tail -f $SCRIPT_DIR/logs/indic_server.log"
+echo "Logs:   tail -f $ROOT_DIR/logs/indic_server.log"
 echo "Status: systemctl --user status voice-indic"
 echo "Stop:   systemctl --user stop voice-indic"
 echo "Test:   curl http://localhost:$PORT/health"

@@ -13,7 +13,7 @@ import asyncio
 import numpy as np
 from typing import Optional
 
-os.environ.setdefault("CUDA_VISIBLE_DEVICES", "7")  # start_stt.sh sets STT_GPU
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "7")  # scripts/start_stt.sh sets STT_GPU
 
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, Form, WebSocket, WebSocketDisconnect, HTTPException
