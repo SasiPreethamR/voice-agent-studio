@@ -1201,6 +1201,7 @@ HoldMusic.init();
 class AudioManager{
   constructor(){this.audioCtx=null;this.stream=null;this.processor=null;this.micMute=null;
     this.playQueue=[];this.isPlaying=false;this.onChunk=null;this.currentSource=null;this._gen=0;
+    this._sources=new Set();this._nextAt=0;this._pumping=false;
     this.playCtx=null;this.playGain=null;this.outputGain=1.8;this.lastPlaybackAt=0}
   _micConstraints(){return {
     echoCancellation:{ideal:true},noiseSuppression:{ideal:true},autoGainControl:{ideal:true},
@@ -1247,18 +1248,26 @@ class AudioManager{
   recentlyPlayed(ms=450){return performance.now()-this.lastPlaybackAt<ms}
   queueAudio(b64,sampleRate=OUTPUT_SR){const bin=atob(b64);const buf=new ArrayBuffer(bin.length);const u8=new Uint8Array(buf);
     for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);this.playQueue.push(buf);
-    this.playRate=sampleRate||OUTPUT_SR;
-    if(!this.isPlaying)this._play().catch(e=>{console.error('PCM playback failed',e);this.isPlaying=false})}
+    this.playRate=sampleRate||OUTPUT_SR;this.isPlaying=true;
+    if(!this._pumping)this._play().catch(e=>{console.error('PCM playback failed',e);this.isPlaying=false;this._pumping=false})}
   clearPlayback(){this._gen++;this.playQueue=[];
-    if(this.currentSource){try{this.currentSource.stop()}catch(e){}}this.currentSource=null;this.isPlaying=false}
-  async _play(){const gen=this._gen;if(!this.playQueue.length){this.isPlaying=false;return}
-    this.isPlaying=true;const buf=this.playQueue.shift();const i16=new Int16Array(buf);
-    const f32=new Float32Array(i16.length);for(let i=0;i<i16.length;i++)f32[i]=i16[i]/32768;
-    const p=await this.unlockPlayback();if(this._gen!==gen)return;
-    const ab=p.createBuffer(1,f32.length,this.playRate||OUTPUT_SR);ab.getChannelData(0).set(f32);
-    const s=p.createBufferSource();s.buffer=ab;s.connect(this.playGain);this.currentSource=s;
-    s.onended=()=>{this.lastPlaybackAt=performance.now();this.currentSource=null;if(this._gen===gen)this._play().catch(e=>{console.error('PCM playback failed',e);this.isPlaying=false})};
-    s.start()}
+    for(const s of this._sources){try{s.stop()}catch(e){}}this._sources.clear();
+    this.currentSource=null;this.isPlaying=false;this._nextAt=0}
+  /* Schedule queued PCM chunks back-to-back on the audio clock, so streamed
+     TTS (many small chunks) plays without gaps between them. */
+  async _play(){const gen=this._gen;this._pumping=true;
+    try{const p=await this.unlockPlayback();if(this._gen!==gen)return;
+      while(this.playQueue.length&&this._gen===gen){
+        const i16=new Int16Array(this.playQueue.shift());
+        const f32=new Float32Array(i16.length);for(let i=0;i<i16.length;i++)f32[i]=i16[i]/32768;
+        const ab=p.createBuffer(1,f32.length,this.playRate||OUTPUT_SR);ab.getChannelData(0).set(f32);
+        const s=p.createBufferSource();s.buffer=ab;s.connect(this.playGain);
+        const at=Math.max(p.currentTime+0.03,this._nextAt);s.start(at);this._nextAt=at+ab.duration;
+        this._sources.add(s);this.currentSource=s;
+        s.onended=()=>{this._sources.delete(s);this.lastPlaybackAt=performance.now();
+          if(!this._sources.size&&!this.playQueue.length&&this._gen===gen){this.currentSource=null;this.isPlaying=false}}}
+      if(!this._sources.size)this.isPlaying=false}
+    finally{this._pumping=false}}
   _ds(buf,from,to){if(from===to)return buf;const r=from/to;const len=Math.floor(buf.length/r);
     const o=new Float32Array(len);for(let i=0;i<len;i++)o[i]=buf[Math.round(i*r)];return o}
   _f2i(f){const i=new Int16Array(f.length);for(let j=0;j<f.length;j++){
@@ -2220,15 +2229,26 @@ const ModelConfig={
     this.state=Object.assign({},this.defaults,s)}return this.state},
   save(s){this.state=Object.assign({},this.defaults,s);
     try{localStorage.setItem(this.STORE,JSON.stringify(this.state))}catch(e){}this.render()},
-  isGemini(){return this.get().provider==='gemini'},
+  geminiOnly(){return !!(this.server&&this.server.mode==='gemini')},
+  isGemini(){return this.geminiOnly()||this.get().provider==='gemini'},
   missingKey(){return this.isGemini()&&!this.get().api_key&&!(this.server&&this.server.server_key)},
-  payload(){return this.isGemini()?Object.assign({},this.get()):{provider:'local'}},
+  payload(){return this.isGemini()?Object.assign({},this.get(),{provider:'gemini'}):{provider:'local'}},
   headers(){return this.isGemini()?{'X-Model-Settings':JSON.stringify(this.payload())}:{}},
   render(){const g=this.isGemini();
     document.getElementById('modelLabel').textContent=g?'Gemini':'Local';
     document.getElementById('svcGeminiWrap').style.display=g?'':'none';
     document.getElementById('svcGemini').className='d'+(this.keyOk===true?' on':this.keyOk===false?' off':'')},
-  async loadDefaults(){try{const r=await fetch(API+'/api/model/defaults');this.server=await r.json()}catch(e){this.server=null}},
+  async loadDefaults(){try{const r=await fetch(API+'/api/model/defaults');this.server=await r.json()}catch(e){this.server=null}
+    this.render();
+    if(this.missingKey())setTimeout(()=>{toast('This server runs on Gemini: add your API key to start','info');openModelModal()},400)},
+  CATALOG:'va.modelCatalog',catalog:null,
+  _fp(k){return k?k.slice(0,6)+':'+k.slice(-4)+':'+k.length:'server'},
+  catalogFor(apiKey){if(!this.catalog){try{this.catalog=JSON.parse(localStorage.getItem(this.CATALOG)||'null')}catch(e){}}
+    return this.catalog&&this.catalog.fp===this._fp(apiKey)?this.catalog.models:null},
+  async fetchCatalog(apiKey){const j=await this.test(apiKey);
+    if(j.ok){this.catalog={fp:this._fp(apiKey),models:j.models,at:Date.now()};
+      try{localStorage.setItem(this.CATALOG,JSON.stringify(this.catalog))}catch(e){}}
+    return j},
   async test(apiKey){
     const r=await fetch(API+'/api/model/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:apiKey})});
     const j=await r.json();this.testedKey=apiKey;this.keyOk=!!j.ok;this.render();return j},
@@ -2246,15 +2266,15 @@ function openModelModal(){
     +'<div class="model-test-status" id="mdlStatus"></div>'
     +'<div class="hint">Stored in this browser only. It goes to this server with each call and is never written to disk. Create one at aistudio.google.com/apikey.'
     +(d.server_key?' Leave empty to use the key configured on the server.':'')+'</div></div>'
-    +'<div class="mf"><label>Use Gemini for</label><div class="model-stage-row">'
+    +'<div class="mf" id="mdlStages"><label>Use Gemini for</label><div class="model-stage-row">'
     +'<label class="model-check"><input type="checkbox" id="mdlUseStt">Speech-to-text</label>'
     +'<label class="model-check"><input type="checkbox" id="mdlUseLlm">LLM</label>'
     +'<label class="model-check"><input type="checkbox" id="mdlUseTts">Text-to-speech</label></div>'
     +'<div class="hint">Unchecked stages keep using the local GPU services. With all three checked, no local GPU service is needed, Indic languages included.</div></div>'
-    +'<div class="mf"><label>Chat model</label><input type="text" id="mdlLlm" list="mdlChatList" spellcheck="false"></div>'
-    +'<div class="model-grid"><div class="mf"><label>Speech-to-text model</label><input type="text" id="mdlStt" list="mdlChatList" spellcheck="false"></div>'
-    +'<div class="mf"><label>Text-to-speech model</label><input type="text" id="mdlTts" list="mdlTtsList" spellcheck="false"></div></div>'
-    +'<datalist id="mdlChatList"></datalist><datalist id="mdlTtsList"></datalist>'
+    +'<div class="mf"><label>Speech-to-text model</label><select id="mdlStt"></select><div class="hint" id="mdlSttHint"></div></div>'
+    +'<div class="mf"><label>Chat model (LLM)</label><select id="mdlLlm"></select><div class="hint" id="mdlLlmHint"></div></div>'
+    +'<div class="mf"><label>Text-to-speech model</label><select id="mdlTts"></select><div class="hint" id="mdlTtsHint"></div></div>'
+    +'<div class="mf" style="margin-top:-8px"><div class="hint" id="mdlModelsNote"></div></div>'
     +'<div class="mf"><label>Reasoning effort</label><select id="mdlEffort">'
     +'<option value="low">Low (fastest on Gemini 3)</option><option value="medium">Medium</option><option value="high">High</option>'
     +'<option value="none">None (Gemini 2.5 Flash only)</option><option value="">Model default</option></select>'
@@ -2265,33 +2285,59 @@ function openModelModal(){
     +'<div class="modal-actions"><button class="mbtn secondary" id="mdlCancel">Cancel</button><button class="mbtn primary" id="mdlSave">Save</button></div></div>';
   document.body.appendChild(ov);
   const $=id=>ov.querySelector('#'+id);
-  let provider=cur.provider;
+  let provider=ModelConfig.geminiOnly()?'gemini':cur.provider;
+  if(ModelConfig.geminiOnly()){$('mdlProvider').style.display='none';$('mdlStages').style.display='none'}
   const setProvider=p=>{provider=p;ov.querySelectorAll('#mdlProvider button').forEach(b=>b.classList.toggle('active',b.dataset.p===p));
     $('mdlLocal').style.display=p==='local'?'':'none';$('mdlGemini').style.display=p==='gemini'?'':'none'};
   ov.querySelectorAll('#mdlProvider button').forEach(b=>b.onclick=()=>setProvider(b.dataset.p));
   setProvider(provider);
   $('mdlKey').value=cur.api_key||'';
   $('mdlUseStt').checked=!!cur.use_stt;$('mdlUseLlm').checked=!!cur.use_llm;$('mdlUseTts').checked=!!cur.use_tts;
-  $('mdlLlm').value=cur.llm_model||'';$('mdlStt').value=cur.stt_model||'';$('mdlTts').value=cur.tts_model||'';
-  $('mdlLlm').placeholder=d.llm_model||'gemini-3.8-flash';$('mdlStt').placeholder='Same as chat model';
-  $('mdlTts').placeholder=d.tts_model||'gemini-3.8-flash-tts';
+  const picked={llm:cur.llm_model||'',stt:cur.stt_model||'',tts:cur.tts_model||''};
+  const defaults={llm:d.llm_model||'gemini-3.8-flash',stt:d.stt_model||'gemini-3.5-flash-lite',tts:d.tts_model||'gemini-3.8-flash-tts'};
+  const SEL={llm:'mdlLlm',stt:'mdlStt',tts:'mdlTts'};
+  const describe=(stage,list)=>{const id=picked[stage]||defaults[stage];const m=(list||[]).find(x=>x.id===id);
+    $(SEL[stage]+'Hint').textContent=m&&m.description?m.description:''};
+  const renderModels=(models,loading)=>{
+    Object.keys(SEL).forEach(stage=>{const sel=$(SEL[stage]),list=models&&models[stage];sel.innerHTML='';
+      const add=(value,text,title)=>{const o=document.createElement('option');o.value=value;o.textContent=text;if(title)o.title=title;sel.appendChild(o)};
+      add('','Default: '+defaults[stage]);
+      if(loading)add('__loading','Loading models from your key…');
+      const ids=new Set();
+      (list||[]).forEach(m=>{ids.add(m.id);add(m.id,m.label&&m.label!==m.id?m.label+'  ·  '+m.id:m.id,m.description)});
+      if(picked[stage]&&!ids.has(picked[stage]))add(picked[stage],picked[stage]+(list?'  (not listed for this key)':''));
+      sel.value=picked[stage];describe(stage,list);
+      sel.onchange=()=>{if(sel.value==='__loading')sel.value=picked[stage];picked[stage]=sel.value;describe(stage,list)}});
+    const n=models?Object.fromEntries(Object.keys(SEL).map(k=>[k,(models[k]||[]).length])):null;
+    $('mdlModelsNote').textContent=n?('Your key can use '+n.stt+' speech-to-text, '+n.llm+' chat and '+n.tts+' text-to-speech models.'):
+      (loading?'':'Add your key to list the models it can use.')};
+  let loadedFp=null;
+  const loadModels=async(force)=>{
+    const key=$('mdlKey').value.trim();
+    if(!key&&!d.server_key){renderModels(null,false);return}
+    const cached=ModelConfig.catalogFor(key);
+    if(cached&&!force){renderModels(cached,false);loadedFp=ModelConfig._fp(key);return}
+    renderModels(cached,true);
+    try{const j=await ModelConfig.fetchCatalog(key);
+      if(!ov.isConnected)return;
+      if(j.ok){renderModels(j.models,false);loadedFp=ModelConfig._fp(key);
+        status('Key works.','ok')}
+      else{renderModels(null,false);status(j.error||'Key check failed','err')}}
+    catch(e){renderModels(cached,false);status('Could not reach the orchestrator','err')}};
   $('mdlEffort').value=cur.reasoning_effort??'low';$('mdlCaptions').checked=!!cur.live_captions;
-  const fill=(id,names)=>{$(id).innerHTML='';(names||[]).forEach(n=>{const o=document.createElement('option');o.value=n;$(id).appendChild(o)})};
   const status=(text,cls)=>{const el=$('mdlStatus');el.textContent=text;el.className='model-test-status'+(cls?' '+cls:'')};
   $('mdlShow').onclick=()=>{const k=$('mdlKey');const show=k.type==='password';k.type=show?'text':'password';$('mdlShow').textContent=show?'Hide':'Show'};
   $('mdlTest').onclick=async()=>{
     status('Checking key from the server…');$('mdlTest').disabled=true;
-    try{const j=await ModelConfig.test($('mdlKey').value.trim());
-      if(j.ok){fill('mdlChatList',j.chat_models);fill('mdlTtsList',j.tts_models);
-        status('Key works. '+j.chat_models.length+' chat and '+j.tts_models.length+' TTS models available.','ok')}
-      else status(j.error||'Key check failed','err')}
-    catch(e){status('Could not reach the orchestrator','err')}
-    $('mdlTest').disabled=false};
+    await loadModels(true);$('mdlTest').disabled=false};
+  $('mdlKey').addEventListener('change',()=>{if(ModelConfig._fp($('mdlKey').value.trim())!==loadedFp){status('');loadModels(false)}});
+  ov.querySelectorAll('#mdlProvider button').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.p==='gemini'&&!loadedFp)loadModels(false)}));
+  if(provider==='gemini')loadModels(false);else renderModels(ModelConfig.catalogFor(cur.api_key||''),false);
   const close=()=>ov.remove();
   $('mdlCancel').onclick=close;ov.onclick=e=>{if(e.target===ov)close()};
   $('mdlSave').onclick=()=>{
-    const next={provider,api_key:$('mdlKey').value.trim(),llm_model:$('mdlLlm').value.trim(),stt_model:$('mdlStt').value.trim(),
-      tts_model:$('mdlTts').value.trim(),reasoning_effort:$('mdlEffort').value,use_llm:$('mdlUseLlm').checked,
+    const next={provider,api_key:$('mdlKey').value.trim(),llm_model:picked.llm,stt_model:picked.stt,
+      tts_model:picked.tts,reasoning_effort:$('mdlEffort').value,use_llm:$('mdlUseLlm').checked,
       use_stt:$('mdlUseStt').checked,use_tts:$('mdlUseTts').checked,live_captions:$('mdlCaptions').checked};
     if(next.api_key!==ModelConfig.testedKey)ModelConfig.keyOk=null;
     ModelConfig.save(next);
@@ -2308,8 +2354,9 @@ function toast(msg,type){const w=document.getElementById('toastWrap');
   const d=document.createElement('div');d.className='toast '+(type||'info');d.textContent=msg;
   w.appendChild(d);setTimeout(()=>d.remove(),3500)}
 async function checkServices(){try{const r=await fetch(API+'/api/services/status');const j=await r.json();
-  for(const k in j.services){const el=document.getElementById('svc'+k.charAt(0).toUpperCase()+k.slice(1));
-    if(el)el.className='d '+(j.services[k]==='online'?'on':'off')}}catch(e){}}
+  ['stt','llm','tts','indic'].forEach(k=>{const el=document.getElementById('svc'+k.charAt(0).toUpperCase()+k.slice(1));
+    if(!el)return;el.parentElement.style.display=(k in j.services)?'':'none';
+    if(k in j.services)el.className='d '+(j.services[k]==='online'?'on':'off')})}catch(e){}}
 
 function switchView(view){
   document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));

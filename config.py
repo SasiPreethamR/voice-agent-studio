@@ -27,6 +27,15 @@ def _load_dotenv(path: Path) -> None:
 
 _load_dotenv(ROOT_DIR / ".env")
 
+# -- Deployment mode --
+# "local"  : self-hosted GPU services below; browsers may switch stages to Gemini (BYOK).
+# "gemini" : Gemini-only deployment (no GPU services installed). Every call uses
+#            Gemini with the browser's key, or GEMINI_API_KEY as a fallback.
+MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "local").strip().lower()
+if MODEL_PROVIDER not in ("local", "gemini"):
+    MODEL_PROVIDER = "local"
+GEMINI_ONLY = MODEL_PROVIDER == "gemini"
+
 # -- Local self-hosted services (see start_*.sh) --
 STT_URL = os.getenv("STT_URL", "http://localhost:8010")      # Faster-Whisper
 LLM_URL = os.getenv("LLM_URL", "http://localhost:8003")      # vLLM / Gemma 4
@@ -41,7 +50,8 @@ OUTPUT_SAMPLE_RATE = 24000  # playback PCM16 mono
 # -- Gemini API (bring-your-own-key alternative to the local stack) --
 GEMINI_API_BASE = os.getenv("GEMINI_API_BASE", "https://generativelanguage.googleapis.com/v1beta")
 GEMINI_LLM_MODEL = os.getenv("GEMINI_LLM_MODEL", "gemini-3.8-flash")
-GEMINI_STT_MODEL = os.getenv("GEMINI_STT_MODEL", GEMINI_LLM_MODEL)
+# Flash-Lite supports "minimal" thinking, which keeps transcription fast.
+GEMINI_STT_MODEL = os.getenv("GEMINI_STT_MODEL", "gemini-3.5-flash-lite")
 GEMINI_TTS_MODEL = os.getenv("GEMINI_TTS_MODEL", "gemini-3.8-flash-tts")
 # Gemini 3 models accept low/medium/high; "none" only works on Gemini 2.5 Flash.
 GEMINI_REASONING_EFFORT = os.getenv("GEMINI_REASONING_EFFORT", "low")

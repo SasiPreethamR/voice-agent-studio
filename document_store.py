@@ -21,7 +21,7 @@ from xml.etree import ElementTree as ET
 
 import numpy as np
 
-from model_providers import LOCAL, ModelSettings, chat_completion
+from model_providers import DEFAULT_MODEL, ModelSettings, chat_completion
 
 DATA_DIR = Path(__file__).parent / "data"
 DOCS_DIR = DATA_DIR / "documents"
@@ -151,12 +151,34 @@ class DocumentStore:
     def __init__(self):
         for path in (DOCS_DIR, RAW_DIR, TREE_DIR, ARTIFACTS_DIR, DB_DIR):
             path.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        self.conn.row_factory = sqlite3.Row
+        self.conn = self._open_db()
         self.embedder = EmbeddingBackend()
         self._cache = {}
         self.fts_enabled = False
         self._init_db()
+
+    @staticmethod
+    def _open_db() -> sqlite3.Connection:
+        """Open the index; a corrupt DB is moved aside and rebuilt from artifacts/."""
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        try:
+            result = conn.execute("PRAGMA quick_check").fetchone()[0]
+        except sqlite3.DatabaseError as exc:
+            result = str(exc)
+        if result == "ok":
+            return conn
+        conn.close()
+        stamp = time.strftime("%Y%m%d-%H%M%S")
+        for suffix in ("", "-wal", "-shm"):
+            src = DB_PATH.with_name(DB_PATH.name + suffix)
+            if src.exists():
+                src.rename(src.with_name(f"{DB_PATH.name}.corrupt-{stamp}{suffix}"))
+        print(f"[DOCS] Document index was corrupt ({result}); moved it aside as "
+              f"{DB_PATH.name}.corrupt-{stamp} and rebuilding from extracted artifacts.")
+        conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        return conn
 
     def _init_db(self):
         self.conn.executescript(
@@ -498,7 +520,7 @@ class DocumentStore:
         job_id = self.create_job(collection_id, total)
         return job_id
 
-    async def run_retry_quests(self, job_id: str, collection_id: str, model: ModelSettings = LOCAL):
+    async def run_retry_quests(self, job_id: str, collection_id: str, model: ModelSettings = DEFAULT_MODEL):
         """Full retry: re-parse failed files from disk, then run K-Quest for all pending files."""
         import asyncio
 
@@ -654,7 +676,7 @@ class DocumentStore:
             self._update_collection_counts(collection_id)
             raise
 
-    async def process_ingest_job(self, job_id: str, files: list[dict], model: ModelSettings = LOCAL):
+    async def process_ingest_job(self, job_id: str, files: list[dict], model: ModelSettings = DEFAULT_MODEL):
         import asyncio
 
         job = self.get_job(job_id)
@@ -684,7 +706,7 @@ class DocumentStore:
         self.update_job(job_id, status="done" if failed == 0 else "done_with_errors")
         self._update_collection_counts(collection_id)
 
-    async def generate_quests(self, file_id: str, model: ModelSettings = LOCAL):
+    async def generate_quests(self, file_id: str, model: ModelSettings = DEFAULT_MODEL):
         file_row = self.conn.execute("SELECT * FROM files WHERE id=?", (file_id,)).fetchone()
         if not file_row or file_row["status"] != "ready":
             return 0

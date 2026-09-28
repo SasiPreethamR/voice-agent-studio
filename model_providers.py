@@ -13,6 +13,7 @@ Gemini LLM + local Kokoro TTS is a valid combination.
 """
 
 import io
+import re
 import json
 import base64
 import struct
@@ -26,7 +27,7 @@ from config import (
     STT_URL, LLM_URL, TTS_URL, INDIC_URL, LLM_MODEL,
     INPUT_SAMPLE_RATE, OUTPUT_SAMPLE_RATE,
     GEMINI_API_BASE, GEMINI_LLM_MODEL, GEMINI_STT_MODEL, GEMINI_TTS_MODEL,
-    GEMINI_REASONING_EFFORT, GEMINI_API_KEY,
+    GEMINI_REASONING_EFFORT, GEMINI_API_KEY, MODEL_PROVIDER, GEMINI_ONLY,
 )
 
 MIN_AUDIO_ENERGY = 400
@@ -110,7 +111,7 @@ class ProviderError(RuntimeError):
 
 @dataclass
 class ModelSettings:
-    provider: str = "local"                      # "local" | "gemini"
+    provider: str = MODEL_PROVIDER               # "local" | "gemini"
     api_key: str = field(default="", repr=False)
     llm_model: str = GEMINI_LLM_MODEL
     stt_model: str = GEMINI_STT_MODEL
@@ -136,11 +137,15 @@ class ModelSettings:
                 kwargs[key] = str(value).strip()
         settings = cls(**kwargs)
         if settings.provider not in ("local", "gemini"):
-            settings.provider = "local"
+            settings.provider = MODEL_PROVIDER
+        if GEMINI_ONLY:
+            # No local services exist in this deployment: every stage is Gemini.
+            settings.provider = "gemini"
+            settings.use_llm = settings.use_stt = settings.use_tts = True
         if settings.reasoning_effort not in REASONING_EFFORTS:
             settings.reasoning_effort = GEMINI_REASONING_EFFORT
         settings.llm_model = settings.llm_model or GEMINI_LLM_MODEL
-        settings.stt_model = settings.stt_model or settings.llm_model
+        settings.stt_model = settings.stt_model or GEMINI_STT_MODEL
         settings.tts_model = settings.tts_model or GEMINI_TTS_MODEL
         return settings
 
@@ -171,7 +176,7 @@ class ModelSettings:
         return f"gemini[{','.join(stages) or 'none'}] llm={self.llm_model} tts={self.tts_model}"
 
 
-LOCAL = ModelSettings()
+DEFAULT_MODEL = ModelSettings()  # provider follows MODEL_PROVIDER
 
 
 def _gemini_error(resp: httpx.Response) -> ProviderError:
@@ -288,7 +293,7 @@ def _wav_to_pcm24k(wav_bytes: bytes) -> Optional[bytes]:
 # ================================================================
 # Speech-to-text
 # ================================================================
-async def transcribe_audio(audio_pcm: bytes, language: str = "en", model: ModelSettings = LOCAL) -> str:
+async def transcribe_audio(audio_pcm: bytes, language: str = "en", model: ModelSettings = DEFAULT_MODEL) -> str:
     if not audio_has_speech(audio_pcm):
         print("[ORCH] Skipped transcription - low energy audio")
         return ""
@@ -345,6 +350,13 @@ async def _gemini_transcribe(wav: bytes, language: str, model: ModelSettings) ->
     async with httpx.AsyncClient(timeout=60.0) as client:
         url, headers = _chat_target(model, "stt")
         resp = await client.post(url, json=body, headers=headers)
+        key_problem = "api key" in resp.text.lower() or resp.status_code in (401, 403)
+        if resp.status_code in (400, 404) and not key_problem and model.stt_model != model.llm_model:
+            # STT model unavailable for this key (or rejects the reasoning level): use the chat model.
+            print(f"[PROVIDERS] STT model {model.stt_model} failed ({resp.status_code}); falling back to {model.llm_model}")
+            model.stt_model = model.llm_model
+            body = _chat_body(messages, model, stage="stt", max_tokens=1024, temperature=0.0)
+            resp = await client.post(url, json=body, headers=headers)
         if resp.status_code != 200:
             raise _gemini_error(resp)
         content = resp.json()["choices"][0]["message"].get("content") or ""
@@ -371,15 +383,18 @@ def _chat_body(messages: list, model: ModelSettings, stage: str = "llm", max_tok
             "max_tokens": max(max_tokens, 2048),
             "temperature": temperature,
         }
-        if model.reasoning_effort:
-            body["reasoning_effort"] = model.reasoning_effort
+        effort = model.reasoning_effort
+        if stage == "stt" and "lite" in model.stt_model:
+            effort = "minimal"  # transcription needs no reasoning; Flash-Lite allows the minimum
+        if effort:
+            body["reasoning_effort"] = effort
     else:
         body = {"model": LLM_MODEL, "messages": messages, "max_tokens": max_tokens, "temperature": temperature}
     body.update({k: v for k, v in extra.items() if v is not None})
     return body
 
 
-async def stream_llm_tokens(messages: list, tools: list = None, model: ModelSettings = LOCAL,
+async def stream_llm_tokens(messages: list, tools: list = None, model: ModelSettings = DEFAULT_MODEL,
                             tool_choice: Optional[str] = None):
     body = _chat_body(messages, model, stream=True, tools=tools or None,
                       tool_choice=tool_choice if tools else None)
@@ -399,15 +414,15 @@ async def stream_llm_tokens(messages: list, tools: list = None, model: ModelSett
                     try:
                         chunk = json.loads(data)
                         delta = chunk["choices"][0]["delta"]
+                        if delta.get("content"):
+                            yield delta["content"]
                         if delta.get("tool_calls"):
                             yield {"tool_calls": delta["tool_calls"]}
-                        elif delta.get("content"):
-                            yield delta["content"]
                     except (json.JSONDecodeError, KeyError, IndexError):
                         pass
 
 
-async def call_llm_with_tools(messages: list, tools: list, model: ModelSettings = LOCAL) -> dict:
+async def call_llm_with_tools(messages: list, tools: list, model: ModelSettings = DEFAULT_MODEL) -> dict:
     body = _chat_body(messages, model, tools=tools)
     async with httpx.AsyncClient(timeout=60.0) as client:
         url, headers = _chat_target(model)
@@ -418,7 +433,7 @@ async def call_llm_with_tools(messages: list, tools: list, model: ModelSettings 
         return resp.json()
 
 
-async def chat_completion(messages: list, model: ModelSettings = LOCAL, max_tokens: int = 512,
+async def chat_completion(messages: list, model: ModelSettings = DEFAULT_MODEL, max_tokens: int = 512,
                           temperature: float = 0.7, timeout: float = 180.0) -> str:
     """Single non-streaming completion; returns the assistant text."""
     body = _chat_body(messages, model, max_tokens=max_tokens, temperature=temperature)
@@ -435,7 +450,7 @@ async def chat_completion(messages: list, model: ModelSettings = LOCAL, max_toke
 # Text-to-speech
 # ================================================================
 async def synthesize_speech(text: str, voice: str = "alloy", speed: float = 1.0, lang_code: str = "a",
-                            language: str = "en", model: ModelSettings = LOCAL) -> Optional[bytes]:
+                            language: str = "en", model: ModelSettings = DEFAULT_MODEL) -> Optional[bytes]:
     """Returns mono int16 PCM @ OUTPUT_SAMPLE_RATE, or None."""
     if not text or not text.strip():
         return None
@@ -516,18 +531,9 @@ def _audio_blob_to_pcm24k(blob: bytes, mime: str) -> Optional[bytes]:
 
 
 async def _gemini_tts(text: str, voice: str, speed: float, model: ModelSettings) -> Optional[bytes]:
-    voice_name = GEMINI_VOICES.get(voice, voice if voice and voice[0].isupper() else "Kore")
-    style = _speed_style(speed)
+    body = _tts_request(text, voice, speed, model)
+    voice_name = body["generation_config"]["speech_config"][0]["voice"]
     headers = {"x-goog-api-key": model.key}
-    part = {"type": "text", "text": text}
-    if style:
-        part["annotations"] = [{"type": "speech_metadata", "style": style}]
-    body = {
-        "model": model.tts_model,
-        "input": [{"type": "user_input", "content": [part]}],
-        "response_format": {"type": "audio"},
-        "generation_config": {"speech_config": [{"voice": voice_name}]},
-    }
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(f"{GEMINI_API_BASE}/interactions", json=body, headers=headers)
         if resp.status_code in (400, 404):
@@ -554,15 +560,124 @@ async def _gemini_tts(text: str, voice: str, speed: float, model: ModelSettings)
     return _audio_blob_to_pcm24k(*blob)
 
 
+async def synthesize_speech_stream(text: str, voice: str = "alloy", speed: float = 1.0, lang_code: str = "a",
+                                   language: str = "en", model: ModelSettings = DEFAULT_MODEL):
+    """Yield mono int16 PCM @ OUTPUT_SAMPLE_RATE chunks as soon as they are generated.
+
+    Gemini streams audio while it synthesizes; the local services return one
+    clip, which is yielded as a single chunk.
+    """
+    if not text or not text.strip():
+        return
+    if not model.gemini("tts"):
+        audio = await synthesize_speech(text, voice, speed, lang_code=lang_code, language=language, model=model)
+        if audio:
+            yield audio
+        return
+
+    yielded = False
+    async for chunk in _gemini_tts_stream(text, voice, speed, model):
+        yielded = True
+        yield chunk
+    if not yielded:
+        # Streaming unavailable for this model/key: fall back to one unary clip.
+        audio = await _gemini_tts(text, voice, speed, model)
+        if audio:
+            yield audio
+
+
+def _tts_request(text: str, voice: str, speed: float, model: ModelSettings) -> dict:
+    voice_name = GEMINI_VOICES.get(voice, voice if voice and voice[0].isupper() else "Kore")
+    part = {"type": "text", "text": text}
+    style = _speed_style(speed)
+    if style:
+        part["annotations"] = [{"type": "speech_metadata", "style": style}]
+    return {
+        "model": model.tts_model,
+        "input": [{"type": "user_input", "content": [part]}],
+        "response_format": {"type": "audio"},
+        "generation_config": {"speech_config": [{"voice": voice_name}]},
+    }
+
+
+async def _gemini_tts_stream(text: str, voice: str, speed: float, model: ModelSettings):
+    body = _tts_request(text, voice, speed, model)
+    body["response_format"] = {"type": "audio", "mime_type": "audio/l16", "sample_rate": OUTPUT_SAMPLE_RATE}
+    body["stream"] = True
+    carry = b""          # odd trailing byte between chunks (PCM16 frames are 2 bytes)
+    first = True
+    unparsed = []        # lines that were not standalone JSON (e.g. a pretty-printed body)
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=10.0)) as client:
+        async with client.stream("POST", f"{GEMINI_API_BASE}/interactions", json=body,
+                                 headers={"x-goog-api-key": model.key}) as resp:
+            if resp.status_code in (400, 404):
+                await resp.aread()
+                print(f"[PROVIDERS] Gemini TTS streaming unavailable ({resp.status_code}); using unary TTS")
+                return
+            if resp.status_code != 200:
+                await resp.aread()
+                raise _gemini_error(resp)
+            async for line in resp.aiter_lines():
+                line = line.strip()
+                if not line or line.startswith(("event:", "id:", ":")):
+                    continue
+                payload = line[5:].strip() if line.startswith("data:") else line
+                if payload == "[DONE]":
+                    break
+                try:
+                    event = json.loads(payload)
+                except json.JSONDecodeError:
+                    unparsed.append(line)
+                    continue
+                if isinstance(event, dict) and event.get("error"):
+                    raise ProviderError(f"Gemini TTS stream error: {event['error']}")
+                delta = event.get("delta") if isinstance(event, dict) else None
+                if not isinstance(delta, dict):
+                    continue  # lifecycle events; audio only arrives in deltas
+                blob = _find_audio_blob(delta)
+                if not blob:
+                    continue
+                raw, mime = blob
+                if first and raw[:4] == b"RIFF":
+                    parsed = _pcm16_wav_frames(raw)
+                    raw = parsed[0].tobytes() if parsed else raw
+                first = False
+                raw = carry + raw
+                carry = raw[-1:] if len(raw) % 2 else b""
+                raw = raw[: len(raw) - len(carry)]
+                if raw:
+                    pcm = _audio_blob_to_pcm24k(raw, mime if "rate=" in mime else f"audio/l16;rate={OUTPUT_SAMPLE_RATE}")
+                    if pcm:
+                        yield pcm
+    if first and unparsed:
+        # Non-SSE body (whole JSON response): extract the audio from it.
+        try:
+            blob = _find_audio_blob(json.loads("\n".join(unparsed)))
+        except json.JSONDecodeError:
+            blob = None
+        if blob:
+            pcm = _audio_blob_to_pcm24k(*blob)
+            if pcm:
+                yield pcm
+
+
 # ================================================================
 # Key check / model discovery
 # ================================================================
 _NON_CHAT_MARKERS = ("embedding", "image", "tts", "live", "native-audio", "veo", "imagen", "aqa", "robotics", "computer-use")
 
 
+def _version_key(model_id: str) -> tuple:
+    """Newest first: gemini-3.8-flash > gemini-3.5-flash > gemini-2.5-pro."""
+    m = re.search(r"gemini-(\d+)(?:\.(\d+))?", model_id)
+    major, minor = (int(m.group(1)), int(m.group(2) or 0)) if m else (0, 0)
+    preview = any(tag in model_id for tag in ("preview", "exp"))
+    return (-major, -minor, preview, model_id)
+
+
 async def gemini_list_models(model: ModelSettings) -> dict:
-    """Validate the key and list usable chat + TTS models."""
-    names, token = [], ""
+    """Validate the key and list the models it can use, grouped by pipeline stage."""
+    raw, token = [], ""
     async with httpx.AsyncClient(timeout=15.0) as client:
         for _ in range(5):
             params = {"pageSize": 1000}
@@ -573,12 +688,30 @@ async def gemini_list_models(model: ModelSettings) -> dict:
             if resp.status_code != 200:
                 raise _gemini_error(resp)
             payload = resp.json()
-            names += [m.get("name", "").removeprefix("models/") for m in payload.get("models", [])]
+            raw += payload.get("models", [])
             token = payload.get("nextPageToken") or ""
             if not token:
                 break
-    gemini = sorted({n for n in names if n.startswith("gemini")}, reverse=True)
-    return {
-        "chat_models": [n for n in gemini if not any(m in n for m in _NON_CHAT_MARKERS)],
-        "tts_models": [n for n in gemini if "tts" in n],
-    }
+
+    seen, entries = set(), []
+    for m in raw:
+        model_id = (m.get("name") or "").removeprefix("models/")
+        methods = m.get("supportedGenerationMethods")
+        if not model_id.startswith("gemini") or model_id in seen:
+            continue
+        if methods is not None and "generateContent" not in methods and "streamGenerateContent" not in methods:
+            continue
+        seen.add(model_id)
+        entries.append({
+            "id": model_id,
+            "label": m.get("displayName") or model_id,
+            "description": (m.get("description") or "").strip()[:240],
+        })
+    entries.sort(key=lambda e: _version_key(e["id"]))
+
+    chat = [e for e in entries if not any(mark in e["id"] for mark in _NON_CHAT_MARKERS)]
+    tts = [e for e in entries if "tts" in e["id"]]
+    # Any chat model understands audio; Flash-Lite is the fast choice, so list it first.
+    stt = sorted(chat, key=lambda e: ("lite" not in e["id"], _version_key(e["id"])))
+    tts = sorted(tts, key=lambda e: ("lite" not in e["id"], _version_key(e["id"])))
+    return {"models": {"llm": chat, "stt": stt, "tts": tts}}

@@ -38,29 +38,33 @@ All model calls go through `model_providers.py`. Endpoints and defaults live in 
 
 ## Quick start: Gemini mode (no GPU)
 
-Needs Python 3.10+.
+Needs Python 3.10+. The core install is about 25 small packages (no torch, no CUDA).
 
 ```bash
-git clone <this repo> && cd <repo>
+git clone https://github.com/SasiPreethamR/voice-agent-studio && cd voice-agent-studio
+python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-python orchestrator.py
+MODEL_PROVIDER=gemini python orchestrator.py
 ```
 
 1. Open http://localhost:8080. Browsers only allow the microphone on `localhost` or over HTTPS.
-2. Click **Model** in the top bar, pick **Gemini API**, paste a key from [Google AI Studio](https://aistudio.google.com/apikey), and click **Test**.
-3. Leave speech-to-text, LLM and text-to-speech all checked. Save.
-4. Go to **Agents**, create an agent, then press **Start** in the Sandbox.
+2. The Model settings dialog opens by itself. Paste a key from [Google AI Studio](https://aistudio.google.com/apikey), click **Test**, then **Save**.
+3. Go to **Agents**, create an agent, then press **Start** in the Sandbox.
+
+`MODEL_PROVIDER=gemini` marks the deployment as Gemini-only. Every stage uses Gemini, the UI hides the local-stack option, and the server stops probing GPU services. You can also put it in `.env` instead of the command line.
 
 The key stays in your browser's local storage. It is sent to the orchestrator with each call and never written to disk. To use one server-side key for everyone instead, set `GEMINI_API_KEY` in `.env`.
 
 Each spoken turn makes several API calls: one transcription, one or two LLM calls, and one text-to-speech call per sentence. Free-tier rate limits are reached quickly.
+
+For PDF, DOCX, OCR and semantic embeddings, add `pip install -r requirements-docs.txt`. This pulls in torch through sentence-transformers. Without it, text, Markdown, CSV, XLSX, HTML and ZIP uploads still work, and retrieval uses keyword full-text search plus a lightweight hashing embedder.
 
 ## Full local stack (GPUs)
 
 Tested on Linux with NVIDIA GPUs. Gemma 4 31B uses two H200-class GPUs by default (tensor parallel, long context), and the speech services fit on one more.
 
 ```bash
-pip install -r requirements.txt -r requirements-gpu.txt
+pip install -r requirements.txt -r requirements-docs.txt -r requirements-gpu.txt
 cp .env.example .env        # add HF_TOKEN; adjust GPU placement
 bash start_all.sh           # LLM, STT, TTS, Indic server, orchestrator
 bash stop_all.sh
@@ -70,11 +74,11 @@ bash stop_all.sh
 - Start or stop services individually with `start_<name>.sh` / `stop_<name>.sh`.
 - GPU placement is set with `LLM_GPUS`, `STT_GPU`, `TTS_GPU` and `INDIC_GPU`. See `.env.example`.
 - The Indic server needs a pinned `transformers` version. See [indic/instructions.md](indic/instructions.md).
-- You can mix modes. For example, keep Whisper and Kokoro local and use Gemini only as the LLM.
+- In this mode (`MODEL_PROVIDER=local`, the default) each browser can still switch individual stages to Gemini in Model settings. For example, keep Whisper and Kokoro local and use Gemini only as the LLM.
 
 ### HTTPS
 
-To use the microphone from another machine, put a certificate at `cert.pem` / `key.pem` in the repo root. The orchestrator switches to HTTPS automatically:
+To use the microphone from another machine, put a certificate at `cert.pem` / `key.pem` in the repo root. The orchestrator switches to HTTPS automatically; set `HTTPS=0` to force plain HTTP, and `PORT` to change the port:
 
 ```bash
 openssl req -x509 -newkey rsa:2048 -sha256 -days 825 -nodes \
